@@ -74,6 +74,8 @@ homebrew_casks:
       owner: rigsecurity
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+      pull_request:
+        enabled: true
     homepage: https://github.com/rigsecurity/ores
     description: "Open Risk Evaluation & Scoring — deterministic cybersecurity risk scoring engine"
 
@@ -83,6 +85,8 @@ scoops:
       owner: rigsecurity
       name: scoop-bucket
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+      pull_request:
+        enabled: true
     homepage: https://github.com/rigsecurity/ores
     description: "Open Risk Evaluation & Scoring — deterministic cybersecurity risk scoring engine"
     license: Apache-2.0
