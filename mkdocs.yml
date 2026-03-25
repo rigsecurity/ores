@@ -10,7 +10,7 @@ theme:
   name: material
   custom_dir: docs/overrides
   logo: assets/logo-dark.svg
-  favicon: assets/logo-dark.png
+  favicon: assets/logo-dark.svg
   icon:
     repo: fontawesome/brands/github
     admonition:
