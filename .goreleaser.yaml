@@ -65,6 +65,57 @@ signs:
     args: ["sign-blob", "--yes", "--output-signature=${signature}", "${artifact}"]
     artifacts: checksum
 
+brews:
+  - ids: [ores]
+    repository:
+      owner: rigsecurity
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/rigsecurity/ores
+    description: "Open Risk Evaluation & Scoring — deterministic cybersecurity risk scoring engine"
+    license: Apache-2.0
+    test: |
+      system bin/"ores", "version"
+    install: |
+      bin.install "ores"
+
+scoops:
+  - ids: [ores]
+    repository:
+      owner: rigsecurity
+      name: scoop-bucket
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/rigsecurity/ores
+    description: "Open Risk Evaluation & Scoring — deterministic cybersecurity risk scoring engine"
+    license: Apache-2.0
+
+nfpms:
+  - id: ores
+    builds: [ores]
+    package_name: ores
+    vendor: Rig Security
+    homepage: https://github.com/rigsecurity/ores
+    maintainer: Rig Security <oss@rig.security>
+    description: "Open Risk Evaluation & Scoring — deterministic cybersecurity risk scoring engine"
+    license: Apache-2.0
+    formats: [deb, rpm]
+    section: utils
+
+  - id: oresd
+    builds: [oresd]
+    package_name: oresd
+    vendor: Rig Security
+    homepage: https://github.com/rigsecurity/ores
+    maintainer: Rig Security <oss@rig.security>
+    description: "ORES scoring daemon — HTTP + gRPC via ConnectRPC"
+    license: Apache-2.0
+    formats: [deb, rpm]
+    section: utils
+    contents:
+      - src: packaging/oresd.service
+        dst: /usr/lib/systemd/system/oresd.service
+        type: config
+
 changelog:
   sort: asc
   filters:
