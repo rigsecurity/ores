@@ -1,0 +1,65 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install \
+            mkdocs-material \
+            mkdocs-minify-plugin \
+            pymdown-extensions \
+            pillow \
+            cairosvg
+
+      - name: Copy logo assets
+        run: |
+          mkdir -p docs/assets
+          cp .github/assets/logo-dark.svg docs/assets/logo-dark.svg
+          cp .github/assets/logo-light.svg docs/assets/logo-light.svg
+          cp .github/assets/logo-dark.png docs/assets/logo-dark.png
+          cp .github/assets/logo-light.png docs/assets/logo-light.png
+
+      - name: Build documentation
+        run: mkdocs build --strict
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

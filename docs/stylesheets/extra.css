@@ -1,0 +1,423 @@
+/* ==========================================================================
+   ORES Documentation — Rig Design System
+   ========================================================================== */
+
+/* ---------- Brand Colors ---------- */
+:root {
+  --ores-primary: #35D2AE;
+  --ores-primary-light: #5EDFC2;
+  --ores-primary-dark: #2AB897;
+  --ores-primary-fg: #0A0A0F;
+  --ores-primary-dim: rgba(53, 210, 174, 0.15);
+  --ores-accent: #746BE9;
+  --ores-accent-light: #9990EF;
+  --ores-border: #e2e8f0;
+  --ores-border-hover: rgba(53, 210, 174, 0.35);
+  --ores-gradient: linear-gradient(135deg, #35D2AE 0%, #746BE9 100%);
+  --ores-gradient-soft: linear-gradient(135deg, rgba(53,210,174,0.06) 0%, rgba(116,107,233,0.06) 100%);
+
+  /* Severity — light mode (from Rig frontend) */
+  --sev-critical-text: #9f1239; --sev-critical-bg: #ffe4e6;
+  --sev-high-text: #dc2626;    --sev-high-bg: #fee2e2;
+  --sev-medium-text: #ea580c;  --sev-medium-bg: #ffedd5;
+  --sev-low-text: #ca8a04;     --sev-low-bg: #fef9c3;
+  --sev-info-text: #2563eb;    --sev-info-bg: #dbeafe;
+
+  --md-primary-fg-color: #1a1f2b;
+  --md-primary-fg-color--light: #2a3040;
+  --md-primary-fg-color--dark: #0f1219;
+  --md-primary-bg-color: #E4E4E7;
+  --md-accent-fg-color: #35D2AE;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #0f1219;
+  --md-default-bg-color--light: #161b26;
+  --ores-border: rgba(255,255,255,0.08);
+  --ores-gradient-soft: linear-gradient(135deg, rgba(53,210,174,0.04) 0%, rgba(116,107,233,0.04) 100%);
+
+  /* Severity — dark mode */
+  --sev-critical-text: #fb7185; --sev-critical-bg: rgba(136,19,55,0.35);
+  --sev-high-text: #f87171;    --sev-high-bg: rgba(127,29,29,0.35);
+  --sev-medium-text: #fb923c;  --sev-medium-bg: rgba(124,45,18,0.35);
+  --sev-low-text: #facc15;     --sev-low-bg: rgba(113,63,18,0.35);
+  --sev-info-text: #60a5fa;    --sev-info-bg: rgba(23,37,84,0.35);
+
+  --md-primary-fg-color: #0f1219;
+  --md-primary-bg-color: #E4E4E7;
+  --md-accent-fg-color: #35D2AE;
+  --md-code-bg-color: #18181B;
+  --md-typeset-a-color: #35D2AE;
+}
+
+/* ---------- Header ---------- */
+.md-header {
+  background-color: #0f1219 !important;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.md-header__title { color: #E4E4E7 !important; }
+.md-tabs { background-color: #161b26 !important; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.md-tabs__link { color: #A1A1AA !important; }
+.md-tabs__link--active, .md-tabs__link:hover { color: #35D2AE !important; }
+[data-md-color-scheme="default"] .md-header { background-color: #0f1219 !important; }
+[data-md-color-scheme="default"] .md-tabs { background-color: #161b26 !important; }
+
+/* ---------- Typography ---------- */
+.md-typeset h1 { font-weight: 800; letter-spacing: -0.03em; }
+.md-typeset h2 { font-weight: 700; letter-spacing: -0.02em; margin-top: 2em; }
+.md-typeset h3 { font-weight: 600; }
+
+/* ---------- Hero Section ---------- */
+.ores-hero {
+  text-align: center;
+  padding: 3rem 1.5rem 2.5rem;
+  margin: -0.6rem -0.6rem 2.5rem;
+  background: var(--ores-gradient-soft);
+  border-radius: 0 0 1.5rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated gradient background — oversized to avoid edge clipping */
+.ores-hero::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(ellipse at 30% 45%, rgba(53,210,174,0.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 55%, rgba(116,107,233,0.15) 0%, transparent 55%);
+  pointer-events: none;
+  animation: ores-hero-shift 10s ease-in-out infinite alternate;
+}
+
+@keyframes ores-hero-shift {
+  0%   { opacity: 0.7; transform: translateX(-3%); }
+  100% { opacity: 1;   transform: translateX(3%); }
+}
+
+.ores-hero > * { position: relative; z-index: 1; }
+
+/* Logo — SVG icon + text wordmark */
+.ores-hero__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.ores-hero__icon {
+  width: 44px;
+  height: 48px;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.ores-hero__wordmark {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--md-default-fg-color);
+}
+
+/* Ensure no wrapper adds background */
+.ores-hero p:has(.ores-hero__brand),
+.ores-hero .ores-hero__brand {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.ores-hero__tagline {
+  font-size: 1.2rem;
+  color: var(--md-default-fg-color--light);
+  max-width: 550px;
+  margin: 0 auto 2rem;
+  line-height: 1.65;
+}
+
+.ores-hero__actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.ores-hero__actions a { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.85rem; text-decoration: none; transition: all 0.2s ease; }
+.ores-btn-primary { background: #35D2AE; color: #0A0A0F !important; }
+.ores-btn-primary:hover { background: #5EDFC2; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(53,210,174,0.3); }
+.ores-btn-secondary { background: transparent; color: var(--md-default-fg-color) !important; border: 1px solid var(--ores-border); }
+.ores-btn-secondary:hover { border-color: #35D2AE; color: #35D2AE !important; }
+.ores-hero__badges { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem; }
+
+/* ---------- Particles overlay ---------- */
+.ores-particles {
+  position: absolute !important;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2 !important;
+}
+
+.ores-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(53,210,174,0.5);
+  animation: ores-float linear infinite;
+}
+
+.ores-particle:nth-child(odd)  { width: 4px; height: 4px; }
+.ores-particle:nth-child(even) { width: 3px; height: 3px; background: rgba(116,107,233,0.4); }
+.ores-particle:nth-child(1) { left: 8%;  bottom: 0; animation-duration: 14s; animation-delay: 0s; }
+.ores-particle:nth-child(2) { left: 22%; bottom: 0; animation-duration: 20s; animation-delay: -4s; }
+.ores-particle:nth-child(3) { left: 38%; bottom: 0; animation-duration: 16s; animation-delay: -8s; }
+.ores-particle:nth-child(4) { left: 52%; bottom: 0; animation-duration: 22s; animation-delay: -2s; }
+.ores-particle:nth-child(5) { left: 68%; bottom: 0; animation-duration: 15s; animation-delay: -6s; }
+.ores-particle:nth-child(6) { left: 82%; bottom: 0; animation-duration: 18s; animation-delay: -10s; }
+.ores-particle:nth-child(7) { left: 45%; bottom: 0; animation-duration: 24s; animation-delay: -3s; width: 5px; height: 5px; background: rgba(53,210,174,0.35); }
+.ores-particle:nth-child(8) { left: 75%; bottom: 0; animation-duration: 19s; animation-delay: -12s; }
+
+@keyframes ores-float {
+  0%   { transform: translateY(0); opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { transform: translateY(-400px); opacity: 0; }
+}
+
+/* ---------- Pipeline (centered) ---------- */
+.ores-pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 2rem 0;
+}
+
+.ores-pipeline-step {
+  text-align: center;
+  padding: 1.5rem 0.75rem;
+}
+
+/* Everything inside pipeline steps must center */
+.ores-pipeline-step p,
+.ores-pipeline-step h4 {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.ores-pipeline-step__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #35D2AE;
+  color: #0A0A0F;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.ores-pipeline-step h4 {
+  margin: 0.5rem 0 !important;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Hide permalink anchors inside pipeline steps */
+.ores-pipeline-step h4 .headerlink {
+  display: none !important;
+}
+
+.ores-pipeline-step p:last-child {
+  margin: 0 auto !important;
+  font-size: 0.85rem;
+  color: var(--md-default-fg-color--light);
+  line-height: 1.5;
+  max-width: 200px;
+}
+
+@media (max-width: 768px) {
+  .ores-pipeline { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- Feature Grid (3 col) ---------- */
+.ores-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+.ores-feature { background: var(--md-default-bg-color); border: 1px solid var(--ores-border); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; transition: border-color 0.2s ease; }
+.ores-feature:hover { border-color: var(--ores-border-hover); }
+.ores-feature__icon { font-size: 1.5rem; margin-bottom: 0.75rem; display: block; line-height: 1; }
+.ores-feature h3 { margin: 0 0 0.5rem !important; font-size: 1rem; font-weight: 700; }
+.ores-feature p { margin: 0; flex: 1; color: var(--md-default-fg-color--light); font-size: 0.85rem; line-height: 1.55; }
+
+/* ---------- Signal Grid (4 col) ---------- */
+.ores-signal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+.ores-signal-card { background: var(--md-default-bg-color); border: 1px solid var(--ores-border); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; transition: border-color 0.2s ease; }
+.ores-signal-card:hover { border-color: var(--ores-border-hover); }
+.ores-signal-card h4 { margin: 0 0 0.35rem !important; font-size: 0.9rem; }
+.ores-signal-card p { margin: 0; flex: 1; font-size: 0.8rem; color: var(--md-default-fg-color--light); line-height: 1.5; }
+
+/* ---------- Deploy Grid (3 col, left aligned) ---------- */
+.ores-deploy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+.ores-deploy-card { background: var(--md-default-bg-color); border: 1px solid var(--ores-border); border-radius: 12px; padding: 1.5rem; text-align: left; display: flex; flex-direction: column; transition: border-color 0.2s ease; }
+.ores-deploy-card:hover { border-color: var(--ores-border-hover); }
+.ores-deploy-card__icon { font-size: 1.5rem; margin-bottom: 0.5rem; line-height: 1; }
+.ores-deploy-card h3 { margin: 0 0 0.15rem !important; font-size: 1rem; }
+.ores-deploy-card .ores-deploy-card__binary { font-family: var(--md-code-font), monospace; font-size: 0.8rem; color: #35D2AE; margin-bottom: 0.5rem; display: block; }
+.ores-deploy-card p:not(:last-child) { font-size: 0.85rem; color: var(--md-default-fg-color--light); margin: 0; flex: 1; line-height: 1.5; }
+.ores-deploy-card p:last-child { margin-top: auto; margin-bottom: 0; padding-top: 0.75rem; }
+.ores-deploy-card a { font-size: 0.85rem; font-weight: 600; color: #35D2AE !important; }
+
+/* ---------- Comparison Table ---------- */
+.ores-comparison table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.ores-comparison th, .ores-comparison td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--ores-border);
+}
+.ores-comparison th {
+  font-weight: 700;
+  font-size: 0.9rem;
+  border-bottom-width: 2px;
+}
+/* Row label — prominent */
+.ores-comparison td:first-child {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--md-default-fg-color);
+  white-space: nowrap;
+}
+/* Status quo — smaller, muted */
+.ores-comparison td:nth-child(2) {
+  color: var(--md-default-fg-color--light);
+  font-size: 0.85rem;
+}
+/* ORES — smaller, accent */
+.ores-comparison td:nth-child(3) {
+  color: #35D2AE;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* ---------- Severity Badges (Rig palette) ---------- */
+.ores-score { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2em 0.65em; border-radius: 6px; font-weight: 700; font-size: 0.8rem; font-family: var(--md-code-font, "JetBrains Mono"), monospace; }
+.ores-score--critical { background: var(--sev-critical-bg); color: var(--sev-critical-text); }
+.ores-score--high     { background: var(--sev-high-bg);     color: var(--sev-high-text); }
+.ores-score--medium   { background: var(--sev-medium-bg);   color: var(--sev-medium-text); }
+.ores-score--low      { background: var(--sev-low-bg);      color: var(--sev-low-text); }
+.ores-score--info     { background: var(--sev-info-bg);     color: var(--sev-info-text); }
+
+/* ---------- Severity in tables/content (global) ---------- */
+.md-typeset td .ores-score,
+.md-typeset .ores-score { line-height: 1.4; }
+
+/* ---------- Code Blocks ---------- */
+.md-typeset pre > code, .md-typeset .highlight > pre { border-radius: 8px; }
+[data-md-color-scheme="slate"] .md-typeset .highlight > pre,
+[data-md-color-scheme="slate"] .md-typeset pre > code { background: #18181B; }
+
+/* ---------- Admonitions ---------- */
+.md-typeset .admonition, .md-typeset details { border-radius: 8px; border-left-width: 4px; }
+
+/* ---------- Tabs ---------- */
+.md-typeset .tabbed-labels > label { font-weight: 600; font-size: 0.85rem; }
+
+/* ---------- Sidebar ---------- */
+.md-nav__link--active { color: #35D2AE !important; font-weight: 600; }
+
+/* ---------- Footer ---------- */
+.md-footer { border-top: 1px solid var(--ores-border); }
+[data-md-color-scheme="slate"] .md-footer { background-color: #0A0D14; }
+
+/* ---------- Buttons ---------- */
+.md-typeset .md-button { border-radius: 8px; font-weight: 600; }
+.md-typeset .md-button--primary { background-color: #35D2AE; border-color: #35D2AE; color: #0A0A0F; }
+.md-typeset .md-button--primary:hover { background-color: #5EDFC2; border-color: #5EDFC2; }
+
+/* ---------- WASM Playground ---------- */
+.ores-playground {
+  border: 1px solid var(--ores-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+.ores-playground__header {
+  padding: 0.75rem 1rem;
+  background: rgba(53,210,174,0.08);
+  border-bottom: 1px solid var(--ores-border);
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ores-playground__body { display: grid; grid-template-columns: 1fr 1fr; min-height: 300px; }
+.ores-playground__input, .ores-playground__output {
+  padding: 1rem;
+  font-family: var(--md-code-font), monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.ores-playground__input { border-right: 1px solid var(--ores-border); }
+.ores-playground__input textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+  background: transparent;
+  border: none;
+  color: var(--md-default-fg-color);
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  resize: none;
+  outline: none;
+}
+.ores-playground__output { background: rgba(0,0,0,0.05); }
+[data-md-color-scheme="slate"] .ores-playground__output { background: rgba(0,0,0,0.2); }
+.ores-playground__actions {
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--ores-border);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.ores-playground__btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  border: none;
+  background: #35D2AE;
+  color: #0A0A0F;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ores-playground__btn:hover { background: #5EDFC2; }
+.ores-playground__status { font-size: 0.8rem; color: var(--md-default-fg-color--light); }
+
+@media (max-width: 768px) {
+  .ores-playground__body { grid-template-columns: 1fr; }
+  .ores-playground__input { border-right: none; border-bottom: 1px solid var(--ores-border); }
+}
+
+/* ---------- Hide homepage title ---------- */
+h1:has(+ .ores-hero), .md-typeset h1:has(+ .ores-hero) { display: none !important; }
+.ores-hide-title { display: none !important; }
+
+/* ---------- Misc ---------- */
+html { scroll-behavior: smooth; }
+::selection { background: rgba(53,210,174,0.25); }
+[data-md-color-scheme="slate"] ::-webkit-scrollbar { width: 8px; }
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-track { background: #0f1219; }
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .ores-features, .ores-deploy-grid { grid-template-columns: repeat(2, 1fr); }
+  .ores-signal-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .ores-hero { padding: 2rem 0.75rem 1.5rem; }
+  .ores-hero__logo { width: 150px; }
+  .ores-hero__tagline { font-size: 1rem; }
+  .ores-features, .ores-deploy-grid, .ores-signal-grid { grid-template-columns: 1fr; }
+}

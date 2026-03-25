@@ -1,6 +1,8 @@
-# Go Library Guide
+# :material-language-go: Go Library Guide
 
-The `pkg/engine` package provides the ORES engine as an embeddable Go library. Use it when you want to evaluate risk signals in-process without any subprocess, network call, or IPC overhead.
+The `pkg/engine` package provides the ORES engine as an embeddable Go library. Use it when you want to evaluate risk signals **in-process** — no subprocess, no network call, no IPC overhead.
+
+---
 
 ## Installation
 
@@ -8,15 +10,16 @@ The `pkg/engine` package provides the ORES engine as an embeddable Go library. U
 go get github.com/rigsecurity/ores
 ```
 
-Requires Go 1.25 or later.
+!!! note "Go version"
+    Requires **Go 1.25** or later.
 
 ---
 
-## Basic Usage
-
-The primary entry point is `engine.New()`, which returns an `*Engine` with all built-in signal parsers registered:
+## Quick Start
 
 ```go
+package main
+
 import (
     "context"
     "fmt"
@@ -42,12 +45,12 @@ func main() {
                 "percentile":  0.98,
             },
             "threat_intel": map[string]any{
-                "actively_exploited":   true,
+                "actively_exploited":    true,
                 "ransomware_associated": false,
             },
             "asset": map[string]any{
-                "criticality":        "high",
-                "network_exposure":   true,
+                "criticality":         "high",
+                "network_exposure":    true,
                 "data_classification": "pii",
             },
         },
@@ -71,11 +74,21 @@ func main() {
 
 ## API Reference
 
-### `engine.New() *Engine`
+### `engine.New`
 
-Creates a new `Engine` with all built-in signal parsers registered. This is the standard constructor. Creating an `Engine` is inexpensive and goroutine-safe after construction.
+```go
+func New() *Engine
+```
 
-### `(*Engine).Evaluate(ctx context.Context, req *score.EvaluationRequest) (*score.EvaluationResult, error)`
+Creates a new `Engine` with all built-in signal parsers registered. This is the standard constructor. Creating an `Engine` is inexpensive and the returned instance is safe for concurrent use.
+
+---
+
+### `(*Engine).Evaluate`
+
+```go
+func (e *Engine) Evaluate(ctx context.Context, req *score.EvaluationRequest) (*score.EvaluationResult, error)
+```
 
 Runs the full evaluation pipeline:
 
@@ -84,21 +97,36 @@ Runs the full evaluation pipeline:
 3. Validates and normalizes each recognized signal
 4. Computes the weighted composite score
 5. Calculates confidence
-6. Builds the explanation
+6. Builds the explanation with contributing factors
 
-Returns an error if the request envelope is invalid, or if no valid signals were found after parsing. Invalid individual signals (bad field values) produce warnings rather than errors, and the evaluation continues with the remaining valid signals.
+Returns an error if the request envelope is invalid, or if **no** valid signals were found after parsing.
 
-### `(*Engine).Signals() []score.SignalDescriptor`
+!!! info "Partial failures produce warnings, not errors"
+    Invalid individual signals (bad field values, out-of-range numbers) produce warnings rather than errors. The evaluation continues with the remaining valid signals. Always check `result.Explanation.Warnings`.
 
-Returns descriptors for all registered signal types, sorted by name. Useful for dynamic documentation, validation UIs, or schema generation.
+---
 
-### `(*Engine).Version() string`
+### `(*Engine).Signals`
+
+```go
+func (e *Engine) Signals() []score.SignalDescriptor
+```
+
+Returns descriptors for all registered signal types, sorted alphabetically by name. Useful for dynamic documentation, validation UIs, or schema generation.
+
+---
+
+### `(*Engine).Version`
+
+```go
+func (e *Engine) Version() string
+```
 
 Returns the model version string (e.g., `"0.1.0-preview"`).
 
 ---
 
-## Types
+## Type Reference
 
 ### `score.EvaluationRequest`
 
@@ -110,12 +138,16 @@ type EvaluationRequest struct {
 }
 ```
 
-The `Signals` map keys are signal type names. Each value is the signal-specific payload (a `map[string]any`). See [Signals](../concepts/signals.md) for the full catalog.
+`APIVersion`
+:   Must be `"ores.dev/v1"`.
 
-Required values:
-- `APIVersion`: must be `"ores.dev/v1"`
-- `Kind`: must be `"EvaluationRequest"`
-- `Signals`: must have at least one entry
+`Kind`
+:   Must be `"EvaluationRequest"`.
+
+`Signals`
+:   A map of signal type names to their payloads. Each value is a `map[string]any` with signal-specific fields. See [Signals](../concepts/signals.md) for the full catalog.
+
+---
 
 ### `score.EvaluationResult`
 
@@ -128,7 +160,25 @@ type EvaluationResult struct {
     Version     string      `json:"version"`
     Explanation Explanation `json:"explanation"`
 }
+```
 
+`Score`
+:   Composite risk score from 0 (no risk) to 100 (critical risk).
+
+`Label`
+:   Human-readable risk category: `none`, `low`, `medium`, `high`, or `critical`.
+
+`Version`
+:   The model version that produced this result.
+
+`Explanation`
+:   Detailed breakdown of how the score was computed.
+
+---
+
+### `score.Explanation`
+
+```go
 type Explanation struct {
     SignalsProvided int      `json:"signals_provided"`
     SignalsUsed     int      `json:"signals_used"`
@@ -138,7 +188,25 @@ type Explanation struct {
     Confidence      float64  `json:"confidence"`
     Factors         []Factor `json:"factors"`
 }
+```
 
+`SignalsProvided`
+:   Total number of signals in the request.
+
+`SignalsUsed`
+:   Number of signals that were valid and contributed to the score.
+
+`Confidence`
+:   A value between 0.0 and 1.0 reflecting signal coverage. See [Confidence](../concepts/confidence.md).
+
+`Factors`
+:   Ordered list of scoring factors, from highest contribution to lowest.
+
+---
+
+### `score.Factor`
+
+```go
 type Factor struct {
     Name         string   `json:"factor"`
     Contribution int      `json:"contribution"`
@@ -147,11 +215,20 @@ type Factor struct {
 }
 ```
 
+`Contribution`
+:   Points this factor added to the composite score.
+
+`DerivedFrom`
+:   The signal types that fed into this factor. When a signal was not provided, `"defaults"` appears here.
+
+`Reasoning`
+:   Human-readable explanation of the factor's impact.
+
 ---
 
-## Embedding in an HTTP Handler
+## :material-web: Embedding in an HTTP Handler
 
-Here is a complete example of embedding the ORES engine in an HTTP service that exposes a `/score` endpoint:
+A complete example of wrapping the ORES engine in a custom HTTP service:
 
 ```go
 package main
@@ -238,11 +315,15 @@ curl -X POST http://localhost:8080/score \
   }'
 ```
 
+!!! tip "Use the daemon for production"
+    This example shows how to embed the engine in your own service. If you just need a standalone scoring API, use `oresd` instead — it includes health checks, audit logging, graceful shutdown, and ConnectRPC/gRPC support out of the box.
+
 ---
 
-## Concurrency
+## :material-lock: Concurrency & Thread Safety
 
-The `Engine` is safe for concurrent use. You can share a single `engine.New()` instance across all goroutines in your application. The engine holds no mutable state after construction; every `Evaluate` call creates its own isolated working state.
+!!! tip "The Engine is fully goroutine-safe"
+    You can share a single `engine.New()` instance across all goroutines. The engine holds **no mutable state** after construction; every `Evaluate` call creates its own isolated working state.
 
 ```go
 // Create once at startup
@@ -257,16 +338,18 @@ for i := 0; i < 100; i++ {
 }
 ```
 
+There is no need for mutexes, sync pools, or per-goroutine engine instances. A single `Engine` handles unlimited concurrent evaluations.
+
 ---
 
-## Error Handling
+## :material-alert-circle: Error Handling
 
-`Evaluate` returns a non-nil error in two cases:
+`Evaluate` returns a non-nil error in exactly two cases:
 
-1. **Invalid request envelope** - `apiVersion` missing, wrong `kind`, no signals provided
-2. **No valid signals** - All provided signals were either unknown or had invalid field values
+1. **Invalid request envelope** — missing `apiVersion`, wrong `kind`, or no signals provided
+2. **No valid signals** — all provided signals were either unknown or had invalid field values
 
-When one or more signals are invalid but others succeed, the engine uses the valid ones and records warnings in `result.Explanation.Warnings`. Check this slice in production code to detect degraded input quality.
+When some signals are invalid but others succeed, the engine uses the valid ones and records warnings. Always check both the error return **and** the warnings slice:
 
 ```go
 result, err := eng.Evaluate(ctx, req)
@@ -275,16 +358,19 @@ if err != nil {
     return fmt.Errorf("scoring failed: %w", err)
 }
 
+// Non-fatal: some signals were skipped
 if len(result.Explanation.Warnings) > 0 {
-    // Non-fatal: some signals were skipped
     for _, w := range result.Explanation.Warnings {
         slog.Warn("signal skipped", "detail", w)
     }
 }
 
+// Non-fatal: unrecognized signal names
 if len(result.Explanation.UnknownSignals) > 0 {
-    // Non-fatal: unrecognized signal names
     slog.Warn("unknown signals in request",
         "signals", result.Explanation.UnknownSignals)
 }
 ```
+
+!!! warning "Do not ignore warnings in production"
+    A successful evaluation with warnings means the score was computed from **fewer signals than intended**. This can result in lower confidence and less accurate risk assessment. Log warnings and alert on persistent patterns.

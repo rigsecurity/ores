@@ -1,181 +1,254 @@
-# Installation
+# :material-download-circle: Installation
 
-ORES ships three deployment artifacts: the `ores` CLI, the `oresd` daemon, and the `ores.wasm` WASM module. Each has its own installation method depending on how you plan to use it.
+ORES ships **three deployment artifacts** — choose the one that fits your workflow:
 
-## Prerequisites
+| Artifact | What it does | Best for |
+|----------|-------------|----------|
+| **`ores`** CLI | Evaluate risk from the terminal | Scripts, CI pipelines, local triage |
+| **`oresd`** daemon | Long-running HTTP/ConnectRPC service | SIEM, SOAR, ticketing integrations |
+| **`ores.wasm`** module | Portable WASI binary | Browsers, edge runtimes, sandboxed envs |
 
-- **CLI and daemon binaries**: No runtime dependencies. Statically linked.
-- **Go library**: Go 1.25 or later.
-- **WASM module**: A WASI-compatible runtime such as [wasmtime](https://wasmtime.dev/) or the Node.js/Python wasmtime package.
+You can also embed the scoring engine directly as a **Go library** — no subprocess or network call needed.
 
 ---
 
-## CLI (`ores`)
+## :material-console: CLI (`ores`)
 
 The `ores` CLI evaluates risk signals from the terminal, scripts, and CI pipelines.
 
-### Install with `go install`
+!!! info "Prerequisites"
+    **None.** The CLI is a single, statically linked binary with zero runtime dependencies.
 
-If you have Go 1.25 or later:
+=== ":material-language-go: Go Install"
 
-```bash
-go install github.com/rigsecurity/ores/cmd/ores@latest
-```
-
-The binary is placed in `$GOPATH/bin` (typically `~/go/bin`). Make sure that directory is on your `PATH`.
-
-### Download a pre-built binary
-
-Pre-built binaries for Linux, macOS, and Windows are attached to every [GitHub release](https://github.com/rigsecurity/ores/releases).
-
-=== "Linux (x86_64)"
+    If you have **Go 1.25+** on your machine, this is the fastest path:
 
     ```bash
-    curl -Lo ores https://github.com/rigsecurity/ores/releases/latest/download/ores_linux_amd64
-    chmod +x ores
-    sudo mv ores /usr/local/bin/ores
+    go install github.com/rigsecurity/ores/cmd/ores@latest
     ```
 
-=== "macOS (Apple Silicon)"
+    !!! tip "Make sure `$GOPATH/bin` is on your `PATH`"
+        The binary lands in `$GOPATH/bin` (typically `~/go/bin`). Add it to your shell profile if it is not there already:
+
+        ```bash
+        export PATH="$PATH:$(go env GOPATH)/bin"
+        ```
+
+    **Verify:**
 
     ```bash
-    curl -Lo ores https://github.com/rigsecurity/ores/releases/latest/download/ores_darwin_arm64
-    chmod +x ores
-    sudo mv ores /usr/local/bin/ores
+    ores version
     ```
 
-=== "macOS (Intel)"
+    ```
+    ores version 0.1.0-preview (model: 0.1.0-preview)
+    ```
+
+=== ":material-download: Pre-built Binary"
+
+    Pre-built binaries for Linux, macOS, and Windows are attached to every [GitHub release](https://github.com/rigsecurity/ores/releases){ target=_blank }.
+
+    === "Linux (x86_64)"
+
+        ```bash
+        curl -Lo ores https://github.com/rigsecurity/ores/releases/latest/download/ores_linux_amd64
+        chmod +x ores
+        sudo mv ores /usr/local/bin/ores
+        ```
+
+    === "macOS (Apple Silicon)"
+
+        ```bash
+        curl -Lo ores https://github.com/rigsecurity/ores/releases/latest/download/ores_darwin_arm64
+        chmod +x ores
+        sudo mv ores /usr/local/bin/ores
+        ```
+
+    === "macOS (Intel)"
+
+        ```bash
+        curl -Lo ores https://github.com/rigsecurity/ores/releases/latest/download/ores_darwin_amd64
+        chmod +x ores
+        sudo mv ores /usr/local/bin/ores
+        ```
+
+    === "Windows"
+
+        Download `ores_windows_amd64.exe` from the [releases page](https://github.com/rigsecurity/ores/releases){ target=_blank } and place it somewhere on your `%PATH%`.
+
+    **Verify:**
 
     ```bash
-    curl -Lo ores https://github.com/rigsecurity/ores/releases/latest/download/ores_darwin_amd64
-    chmod +x ores
-    sudo mv ores /usr/local/bin/ores
+    ores version
     ```
 
-=== "Windows"
+    ```
+    ores version 0.1.0-preview (model: 0.1.0-preview)
+    ```
 
-    Download `ores_windows_amd64.exe` from the [releases page](https://github.com/rigsecurity/ores/releases) and place it somewhere on your `%PATH%`.
+=== ":material-source-branch: From Source"
 
-### Verify the installation
+    ```bash
+    git clone https://github.com/rigsecurity/ores.git
+    cd ores
+    task build          # builds CLI + daemon
+    ```
 
-```bash
-ores version
-```
+    Binaries land in the `bin/` directory.
 
-Expected output:
+    !!! note "Build prerequisites"
+        Building from source requires **Go 1.25+** and [Task](https://taskfile.dev){ target=_blank }. See [Contributing: Development](../contributing/development.md) for the full setup guide.
 
-```
-ores version 0.1.0-preview (model: 0.1.0-preview)
-```
+    **Verify:**
+
+    ```bash
+    ./bin/ores version
+    ```
 
 ---
 
-## Daemon (`oresd`)
+## :material-server: Daemon (`oresd`)
 
-The `oresd` daemon exposes a long-running ConnectRPC/HTTP service. Use it to integrate ORES into SIEM, SOAR, ticketing, or any other system that can make HTTP calls.
+The `oresd` daemon exposes a long-running **ConnectRPC / HTTP** service. Use it to integrate ORES into SIEM, SOAR, ticketing, or any system that can make HTTP calls.
 
-### Docker (recommended)
-
-```bash
-docker pull ghcr.io/rigsecurity/oresd:latest
-docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:latest
-```
-
-To pin a specific release:
-
-```bash
-docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:0.1.0-preview
-```
-
-### Install with `go install`
-
-```bash
-go install github.com/rigsecurity/ores/cmd/oresd@latest
-```
-
-### Download a pre-built binary
-
-=== "Linux (x86_64)"
+=== ":material-docker: Docker (recommended)"
 
     ```bash
-    curl -Lo oresd https://github.com/rigsecurity/ores/releases/latest/download/oresd_linux_amd64
-    chmod +x oresd
-    sudo mv oresd /usr/local/bin/oresd
+    docker pull ghcr.io/rigsecurity/oresd:latest
+    docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:latest
     ```
 
-=== "macOS (Apple Silicon)"
+    !!! tip "Pin to a specific release for production"
+        ```bash
+        docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:0.1.0-preview
+        ```
+
+    **Verify:**
 
     ```bash
-    curl -Lo oresd https://github.com/rigsecurity/ores/releases/latest/download/oresd_darwin_arm64
-    chmod +x oresd
-    sudo mv oresd /usr/local/bin/oresd
+    curl -s http://localhost:8080/healthz
+    # 200 OK
     ```
 
-### Verify the installation
+=== ":material-language-go: Go Install"
 
-```bash
-oresd &
-curl -s http://localhost:8080/healthz
-```
+    ```bash
+    go install github.com/rigsecurity/ores/cmd/oresd@latest
+    ```
 
-Expected output: `200 OK`
+    **Verify:**
+
+    ```bash
+    oresd &
+    curl -s http://localhost:8080/healthz
+    # 200 OK
+    ```
+
+=== ":material-download: Pre-built Binary"
+
+    === "Linux (x86_64)"
+
+        ```bash
+        curl -Lo oresd https://github.com/rigsecurity/ores/releases/latest/download/oresd_linux_amd64
+        chmod +x oresd
+        sudo mv oresd /usr/local/bin/oresd
+        ```
+
+    === "macOS (Apple Silicon)"
+
+        ```bash
+        curl -Lo oresd https://github.com/rigsecurity/ores/releases/latest/download/oresd_darwin_arm64
+        chmod +x oresd
+        sudo mv oresd /usr/local/bin/oresd
+        ```
+
+    **Verify:**
+
+    ```bash
+    oresd &
+    curl -s http://localhost:8080/healthz
+    # 200 OK
+    ```
 
 ---
 
-## WASM Module (`ores.wasm`)
+## :material-web: WASM Module (`ores.wasm`)
 
-The WASM module lets you embed the ORES engine directly in browsers, edge runtimes, Node.js, Python, or any environment that supports the WASI preview1 interface.
+The WASM module lets you embed the ORES engine directly in **browsers, edge runtimes, Node.js, Python**, or any environment that supports the WASI preview 1 interface.
 
-### Download from releases
+!!! info "Runtime requirement"
+    You need a **WASI-compatible runtime** such as [wasmtime](https://wasmtime.dev/){ target=_blank }, or the Node.js / Python wasmtime package.
 
-The `ores.wasm` file is attached to every [GitHub release](https://github.com/rigsecurity/ores/releases).
+**Step 1 — Download the module:**
 
 ```bash
 curl -Lo ores.wasm https://github.com/rigsecurity/ores/releases/latest/download/ores.wasm
 ```
 
-### Install wasmtime (to run locally)
+**Step 2 — Install a WASI runtime** (if you don't have one):
 
-```bash
-# macOS / Linux
-curl https://wasmtime.dev/install.sh -sSf | bash
+=== "curl (macOS / Linux)"
 
-# or via Homebrew
-brew install wasmtime
-```
+    ```bash
+    curl https://wasmtime.dev/install.sh -sSf | bash
+    ```
 
-### Verify
+=== "Homebrew"
+
+    ```bash
+    brew install wasmtime
+    ```
+
+**Step 3 — Verify:**
 
 ```bash
 echo '{"apiVersion":"ores.dev/v1","kind":"EvaluationRequest","signals":{"cvss":{"base_score":7.5}}}' \
   | wasmtime ores.wasm
 ```
 
+!!! tip "Build WASM from source"
+    ```bash
+    git clone https://github.com/rigsecurity/ores.git && cd ores
+    task build:wasm
+    ```
+    The module is written to `bin/ores.wasm`.
+
 ---
 
-## Go Library
+## :material-language-go: Go Library
 
-Embed the ORES engine directly in your Go application without any subprocess or network calls.
+Embed the ORES engine directly in your Go application — no subprocess, no network call.
 
 ```bash
 go get github.com/rigsecurity/ores
 ```
 
-The primary entry point is `github.com/rigsecurity/ores/pkg/engine`. See the [Library guide](../guides/library.md) for a complete integration example.
+The primary entry point is the `engine` package:
+
+```go
+import "github.com/rigsecurity/ores/pkg/engine"
+
+eng := engine.New()
+result, err := eng.Evaluate(ctx, req)
+```
+
+!!! example "Full integration walkthrough"
+    See the [Go Library Guide](../guides/library.md) for a complete, production-ready example.
 
 ---
 
-## Building from Source
+## :material-check-decagram: Quick Reference
 
-```bash
-git clone https://github.com/rigsecurity/ores.git
-cd ores
+| Method | Command | Needs Go? |
+|--------|---------|-----------|
+| CLI via Go | `go install .../cmd/ores@latest` | Yes |
+| CLI binary | Download from [Releases](https://github.com/rigsecurity/ores/releases){ target=_blank } | No |
+| Daemon via Docker | `docker run ghcr.io/rigsecurity/oresd` | No |
+| Daemon via Go | `go install .../cmd/oresd@latest` | Yes |
+| WASM module | Download from [Releases](https://github.com/rigsecurity/ores/releases){ target=_blank } | No |
+| Go library | `go get github.com/rigsecurity/ores` | Yes |
+| From source | `git clone` + `task build` | Yes |
 
-# Build CLI and daemon
-task build
+---
 
-# Build WASM module
-task build:wasm
-```
-
-Binaries are placed in the `bin/` directory. See [Contributing: Development](../contributing/development.md) for the full development setup, including prerequisites.
+**Next up:** [Quickstart — score your first vulnerability in 60 seconds :material-arrow-right:](quickstart.md)
