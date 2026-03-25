@@ -29,18 +29,20 @@ Think of it as the **credit score for cybersecurity risk**. You wouldn't trust a
 
 ## The Pitch
 
-```
-                    ┌─────────────┐
-  CVSS 9.8 ───────▶│             │
-  EPSS 0.95 ──────▶│             │
-  KEV: true ──────▶│    ORES     │──────▶ Score: 89 (High)
-  Asset: crown ───▶│   Engine    │──────▶ Confidence: 1.0
-  Blast: 142 ─────▶│             │──────▶ "Here's exactly why."
-  Patch: 45d ─────▶│             │
-                    └─────────────┘
+```text
 
-  Feed it what you have. More signals = more confidence.
-  Same input = same score. Always. Everywhere. Fight me.
+                     ┌─────────────┐
+   CVSS 9.8 ───────▶│             │
+   EPSS 0.95 ──────▶│             │
+   KEV: true ──────▶│    ORES     │──────▶ Score: 89 (High)
+   Asset: crown ───▶│   Engine    │──────▶ Confidence: 1.0
+   Blast: 142 ─────▶│             │──────▶ "Here's exactly why."
+   Patch: 45d ─────▶│             │
+                     └─────────────┘
+
+   Feed it what you have. More signals = more confidence.
+   Same input = same score. Always. Everywhere. Fight me.
+
 ```
 
 ## Quick Start
