@@ -14,6 +14,7 @@ var _ signals.Signal = &parsers.Asset{}
 func TestAssetImplementsSignal(t *testing.T) {
 	var s signals.Signal = &parsers.Asset{}
 	assert.Equal(t, "asset", s.Name())
+	assert.NotEmpty(t, s.Description())
 }
 
 func TestAssetValidate(t *testing.T) {
@@ -213,6 +214,16 @@ func TestAssetNormalize(t *testing.T) {
 			tt.check(t, ns)
 		})
 	}
+}
+
+func TestAssetNormalizeInvalidInput(t *testing.T) {
+	a := &parsers.Asset{}
+
+	_, err := a.Normalize("invalid")
+	require.Error(t, err)
+
+	_, err = a.Normalize(map[string]any{})
+	require.Error(t, err)
 }
 
 func TestAssetFields(t *testing.T) {

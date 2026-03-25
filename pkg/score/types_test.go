@@ -108,4 +108,24 @@ func TestEvaluationRequestValidation(t *testing.T) {
 		}
 		assert.Error(t, req.Validate())
 	})
+
+	t.Run("wrong kind", func(t *testing.T) {
+		req := score.EvaluationRequest{
+			APIVersion: score.APIVersion,
+			Kind:       "WrongKind",
+			Signals:    map[string]any{"cvss": map[string]any{"base_score": 5.0}},
+		}
+		err := req.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected kind")
+	})
+
+	t.Run("nil signals", func(t *testing.T) {
+		req := score.EvaluationRequest{
+			APIVersion: score.APIVersion,
+			Kind:       score.KindEvaluationRequest,
+			Signals:    nil,
+		}
+		assert.Error(t, req.Validate())
+	})
 }

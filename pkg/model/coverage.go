@@ -1,5 +1,7 @@
 package model
 
+import "math"
+
 // DimensionDef describes a scoring dimension's coverage by named signal types.
 // Each source is a signal name (e.g., "cvss", "epss") that contributes to the dimension.
 type DimensionDef struct {
@@ -23,6 +25,7 @@ func DefaultDimensions() []DimensionDef {
 // CalculateConfidence returns a value in [0.0, 1.0] representing how well the
 // provided signal names cover the given scoring dimensions. It is a weighted
 // average of (sources covered / total sources) per dimension.
+// The result is rounded to 4 decimal places to avoid IEEE 754 representation artifacts.
 func CalculateConfidence(dims []DimensionDef, provided map[string]bool) float64 {
 	var total float64
 
@@ -47,5 +50,6 @@ func CalculateConfidence(dims []DimensionDef, provided map[string]bool) float64 
 		return 1.0
 	}
 
-	return total
+	// Round to 4 decimal places to avoid IEEE 754 artifacts like 0.7000000000000001.
+	return math.Round(total*10000) / 10000
 }

@@ -14,6 +14,7 @@ var _ signals.Signal = &parsers.Patch{}
 func TestPatchImplementsSignal(t *testing.T) {
 	var s signals.Signal = &parsers.Patch{}
 	assert.Equal(t, "patch", s.Name())
+	assert.NotEmpty(t, s.Description())
 }
 
 func TestPatchValidate(t *testing.T) {
@@ -196,6 +197,16 @@ func TestPatchNormalize(t *testing.T) {
 			tt.check(t, ns)
 		})
 	}
+}
+
+func TestPatchNormalizeInvalidInput(t *testing.T) {
+	p := &parsers.Patch{}
+
+	_, err := p.Normalize("invalid")
+	require.Error(t, err)
+
+	_, err = p.Normalize(map[string]any{})
+	require.Error(t, err)
 }
 
 func TestPatchFields(t *testing.T) {

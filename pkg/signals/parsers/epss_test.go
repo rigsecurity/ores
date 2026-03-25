@@ -14,6 +14,7 @@ var _ signals.Signal = &parsers.EPSS{}
 func TestEPSSImplementsSignal(t *testing.T) {
 	var s signals.Signal = &parsers.EPSS{}
 	assert.Equal(t, "epss", s.Name())
+	assert.NotEmpty(t, s.Description())
 }
 
 func TestEPSSValidate(t *testing.T) {
@@ -161,6 +162,16 @@ func TestEPSSNormalize(t *testing.T) {
 			tt.check(t, ns)
 		})
 	}
+}
+
+func TestEPSSNormalizeInvalidInput(t *testing.T) {
+	e := &parsers.EPSS{}
+
+	_, err := e.Normalize("invalid")
+	require.Error(t, err)
+
+	_, err = e.Normalize(map[string]any{"probability": 5.0})
+	require.Error(t, err)
 }
 
 func TestEPSSFields(t *testing.T) {

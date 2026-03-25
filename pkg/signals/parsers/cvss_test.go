@@ -14,6 +14,7 @@ var _ signals.Signal = &parsers.CVSS{}
 func TestCVSSImplementsSignal(t *testing.T) {
 	var s signals.Signal = &parsers.CVSS{}
 	assert.Equal(t, "cvss", s.Name())
+	assert.NotEmpty(t, s.Description())
 }
 
 func TestCVSSValidate(t *testing.T) {
@@ -144,6 +145,25 @@ func TestCVSSNormalize(t *testing.T) {
 			tt.check(t, ns)
 		})
 	}
+}
+
+func TestCVSSNormalizeInvalidInput(t *testing.T) {
+	c := &parsers.CVSS{}
+
+	_, err := c.Normalize("invalid")
+	require.Error(t, err)
+
+	_, err = c.Normalize(map[string]any{"base_score": 15.0})
+	require.Error(t, err)
+}
+
+func TestCVSSNormalizeIntegerBaseScore(t *testing.T) {
+	c := &parsers.CVSS{}
+
+	// int type should be accepted via toFloat64.
+	ns, err := c.Normalize(map[string]any{"base_score": 8})
+	require.NoError(t, err)
+	assert.InDelta(t, 0.8, ns["severity"], 0.0001)
 }
 
 func TestCVSSFields(t *testing.T) {

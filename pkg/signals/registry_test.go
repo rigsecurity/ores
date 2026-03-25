@@ -8,23 +8,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type stubSignal struct{}
+type fakeSignal struct{}
 
-func (s *stubSignal) Name() string         { return "stub" }
-func (s *stubSignal) Description() string  { return "A stub signal" }
-func (s *stubSignal) Fields() []string     { return []string{"value"} }
-func (s *stubSignal) Validate(_ any) error { return nil }
-func (s *stubSignal) Normalize(_ any) (signals.NormalizedSignal, error) {
-	return signals.NormalizedSignal{"stub_factor": 0.5}, nil
+func (s *fakeSignal) Name() string         { return "fake" }
+func (s *fakeSignal) Description() string  { return "A fake signal for testing" }
+func (s *fakeSignal) Fields() []string     { return []string{"value"} }
+func (s *fakeSignal) Validate(_ any) error { return nil }
+func (s *fakeSignal) Normalize(_ any) (signals.NormalizedSignal, error) {
+	return signals.NormalizedSignal{"fake_factor": 0.5}, nil
 }
 
 func TestRegistryRegisterAndGet(t *testing.T) {
 	reg := signals.NewRegistry()
-	reg.Register(&stubSignal{})
+	reg.Register(&fakeSignal{})
 
-	sig, ok := reg.Get("stub")
+	sig, ok := reg.Get("fake")
 	require.True(t, ok)
-	assert.Equal(t, "stub", sig.Name())
+	assert.Equal(t, "fake", sig.Name())
 }
 
 func TestRegistryGetMissing(t *testing.T) {
@@ -35,17 +35,17 @@ func TestRegistryGetMissing(t *testing.T) {
 
 func TestRegistryAll(t *testing.T) {
 	reg := signals.NewRegistry()
-	reg.Register(&stubSignal{})
+	reg.Register(&fakeSignal{})
 	all := reg.All()
 	assert.Len(t, all, 1)
-	assert.Equal(t, "stub", all[0].Name())
+	assert.Equal(t, "fake", all[0].Name())
 }
 
 func TestRegistryValidateKnownSignal(t *testing.T) {
 	reg := signals.NewRegistry()
-	reg.Register(&stubSignal{})
+	reg.Register(&fakeSignal{})
 
-	err := reg.Validate("stub", map[string]any{"value": 1})
+	err := reg.Validate("fake", map[string]any{"value": 1})
 	assert.NoError(t, err)
 }
 

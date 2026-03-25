@@ -145,7 +145,7 @@ func TestEngineDeterminism(t *testing.T) {
 	req := validRequest(map[string]any{
 		"cvss": map[string]any{"base_score": 7.5},
 		"epss": map[string]any{"probability": 0.6, "percentile": 0.8},
-		"nist": map[string]any{"base_score": 6.5},
+		"nist": map[string]any{"severity": "high"},
 	})
 
 	result1, err := e.Evaluate(context.Background(), req)

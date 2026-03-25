@@ -14,6 +14,7 @@ var _ signals.Signal = &parsers.ThreatIntel{}
 func TestThreatIntelImplementsSignal(t *testing.T) {
 	var s signals.Signal = &parsers.ThreatIntel{}
 	assert.Equal(t, "threat_intel", s.Name())
+	assert.NotEmpty(t, s.Description())
 }
 
 func TestThreatIntelValidate(t *testing.T) {
@@ -136,6 +137,16 @@ func TestThreatIntelNormalize(t *testing.T) {
 			tt.check(t, ns)
 		})
 	}
+}
+
+func TestThreatIntelNormalizeInvalidInput(t *testing.T) {
+	ti := &parsers.ThreatIntel{}
+
+	_, err := ti.Normalize("invalid")
+	require.Error(t, err)
+
+	_, err = ti.Normalize(map[string]any{})
+	require.Error(t, err)
 }
 
 func TestThreatIntelFields(t *testing.T) {

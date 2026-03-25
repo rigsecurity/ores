@@ -15,6 +15,7 @@ var _ signals.Signal = &parsers.BlastRadius{}
 func TestBlastRadiusImplementsSignal(t *testing.T) {
 	var s signals.Signal = &parsers.BlastRadius{}
 	assert.Equal(t, "blast_radius", s.Name())
+	assert.NotEmpty(t, s.Description())
 }
 
 func TestBlastRadiusValidate(t *testing.T) {
@@ -164,6 +165,16 @@ func TestBlastRadiusNormalize(t *testing.T) {
 			tt.check(t, ns)
 		})
 	}
+}
+
+func TestBlastRadiusNormalizeInvalidInput(t *testing.T) {
+	br := &parsers.BlastRadius{}
+
+	_, err := br.Normalize("invalid")
+	require.Error(t, err)
+
+	_, err = br.Normalize(map[string]any{})
+	require.Error(t, err)
 }
 
 func TestBlastRadiusFields(t *testing.T) {
