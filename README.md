@@ -43,12 +43,44 @@ Think of it as the **credit score for cybersecurity risk**. You wouldn't trust a
    Same input = same score. Always. Everywhere. Fight me.
 ```
 
-## Quick Start
+## Installation
 
-**Install:**
+**Homebrew (macOS / Linux):**
+```bash
+brew install rigsecurity/tap/ores
+```
+
+**Scoop (Windows):**
+```powershell
+scoop bucket add rig https://github.com/rigsecurity/scoop-bucket
+scoop install ores
+```
+
+**Debian / Ubuntu:**
+```bash
+# Download the .deb from the latest release
+curl -LO https://github.com/rigsecurity/ores/releases/latest/download/ores_amd64.deb
+sudo dpkg -i ores_amd64.deb
+```
+
+**RPM (Fedora / RHEL):**
+```bash
+# Download the .rpm from the latest release
+curl -LO https://github.com/rigsecurity/ores/releases/latest/download/ores_amd64.rpm
+sudo rpm -i ores_amd64.rpm
+```
+
+**Go:**
 ```bash
 go install github.com/rigsecurity/ores/cmd/ores@latest
 ```
+
+**Docker (daemon):**
+```bash
+docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:latest
+```
+
+## Quick Start
 
 **Score something:**
 ```bash
