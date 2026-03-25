@@ -20,6 +20,8 @@ const (
 	defaultPort       = ":8080"
 	shutdownTimeout   = 15 * time.Second
 	readHeaderTimeout = 10 * time.Second
+	readTimeout       = 30 * time.Second
+	writeTimeout      = 30 * time.Second
 )
 
 func main() {
@@ -39,6 +41,8 @@ func main() {
 		Addr:              port,
 		Handler:           mux,
 		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
 		BaseContext: func(_ net.Listener) context.Context {
 			return context.Background()
 		},

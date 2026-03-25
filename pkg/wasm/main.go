@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	input, err := io.ReadAll(os.Stdin)
+	input, err := io.ReadAll(io.LimitReader(os.Stdin, 1<<20))
 	if err != nil {
 		writeError(fmt.Sprintf("failed to read stdin: %s", err))
 		os.Exit(1)

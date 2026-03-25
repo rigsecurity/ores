@@ -85,7 +85,7 @@ The five dimensions do not contribute equally to the final score. The weight dis
 | Lateral Risk | 10% |
 
 !!! note
-    The exact scoring formulas and weights are intentionally not published in this documentation. This prevents gaming the model by tuning inputs to hit specific score thresholds rather than accurately representing real-world risk. The weights and the approach are stable across the `0.x` model series; any change will be documented in the [CHANGELOG](https://github.com/rigsecurity/ores/blob/main/CHANGELOG.md) with a model version bump.
+    The scoring formulas are defined in the source code and may change between model versions. Do not hard-code dependencies on specific weight values. Any change will be documented in the [CHANGELOG](https://github.com/rigsecurity/ores/blob/main/CHANGELOG.md) with a model version bump.
 
 ---
 

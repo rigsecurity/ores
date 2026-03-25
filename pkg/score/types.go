@@ -90,7 +90,7 @@ type Explanation struct {
 
 // Factor is one component of the additive score decomposition.
 type Factor struct {
-	Name         string   `json:"factor"`
+	Name         string   `json:"name"`
 	Contribution int      `json:"contribution"`
 	DerivedFrom  []string `json:"derived_from"`
 	Reasoning    string   `json:"reasoning"`
