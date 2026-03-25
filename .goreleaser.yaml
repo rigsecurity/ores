@@ -32,6 +32,8 @@ builds:
 kos:
   - id: oresd
     main: ./cmd/oresd
+    repositories:
+      - ghcr.io/rigsecurity/oresd
     platforms:
       - linux/amd64
       - linux/arm64
@@ -42,19 +44,20 @@ kos:
 
 archives:
   - id: ores
-    builds: [ores]
-    format: tar.gz
+    ids: [ores]
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
   - id: oresd
-    builds: [oresd]
-    format: tar.gz
+    ids: [oresd]
+    formats: [tar.gz]
+    name_template: "oresd_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
   - id: wasm
-    builds: [ores-wasm]
-    format: tar.gz
+    ids: [ores-wasm]
+    formats: [tar.gz]
     name_template: "ores-wasm_{{ .Version }}"
 
 checksum:
@@ -65,7 +68,7 @@ signs:
     args: ["sign-blob", "--yes", "--output-signature=${signature}", "${artifact}"]
     artifacts: checksum
 
-brews:
+homebrew_casks:
   - ids: [ores]
     repository:
       owner: rigsecurity
@@ -73,11 +76,6 @@ brews:
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://github.com/rigsecurity/ores
     description: "Open Risk Evaluation & Scoring — deterministic cybersecurity risk scoring engine"
-    license: Apache-2.0
-    test: |
-      system bin/"ores", "version"
-    install: |
-      bin.install "ores"
 
 scoops:
   - ids: [ores]
@@ -91,7 +89,7 @@ scoops:
 
 nfpms:
   - id: ores
-    builds: [ores]
+    ids: [ores]
     package_name: ores
     vendor: Rig Security
     homepage: https://github.com/rigsecurity/ores
@@ -102,7 +100,7 @@ nfpms:
     section: utils
 
   - id: oresd
-    builds: [oresd]
+    ids: [oresd]
     package_name: oresd
     vendor: Rig Security
     homepage: https://github.com/rigsecurity/ores
