@@ -1,0 +1,29 @@
+version: "2"
+
+linters:
+  enable:
+    - modernize
+    - exptostd
+    - fatcontext
+    - sloglint
+    - errcheck
+    - staticcheck
+    - govet
+    - gosec
+    - errorlint
+    - ineffassign
+    - unused
+    - unparam
+    - unconvert
+    - revive
+    - gocritic
+    - perfsprint
+    - testifylint
+
+formatters:
+  enable:
+    - goimports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

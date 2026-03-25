@@ -1,0 +1,20 @@
+# Binaries
+bin/
+dist/
+*.wasm
+
+# Generated
+gen/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage.txt
+coverage.html
