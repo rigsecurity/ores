@@ -30,7 +30,6 @@ Think of it as the **credit score for cybersecurity risk**. You wouldn't trust a
 ## The Pitch
 
 ```text
-
                     ┌─────────────┐
    CVSS 9.8 ───────▶│             │
    EPSS 0.95 ──────▶│             │
@@ -42,7 +41,6 @@ Think of it as the **credit score for cybersecurity risk**. You wouldn't trust a
 
    Feed it what you have. More signals = more confidence.
    Same input = same score. Always. Everywhere. Fight me.
-
 ```
 
 ## Quick Start
@@ -67,7 +65,156 @@ echo '{
 }' | ores evaluate -o json
 ```
 
-**Get a score, get an explanation, get on with your life.**
+<details>
+<summary><strong>See the full output</strong></summary>
+
+```json
+{
+  "apiVersion": "ores.dev/v1",
+  "kind": "EvaluationResult",
+  "score": 89,
+  "label": "high",
+  "version": "0.1.0-preview",
+  "explanation": {
+    "signals_provided": 5,
+    "signals_used": 5,
+    "signals_unknown": 0,
+    "unknown_signals": [],
+    "warnings": [],
+    "confidence": 0.82,
+    "factors": [
+      {
+        "factor": "base_vulnerability",
+        "contribution": 27,
+        "derived_from": ["cvss"],
+        "reasoning": "Base severity score from vulnerability data (high impact: 98%)"
+      },
+      {
+        "factor": "exploitability",
+        "contribution": 25,
+        "derived_from": ["epss", "threat_intel"],
+        "reasoning": "Likelihood of exploitation based on threat landscape (high impact: 83%)"
+      },
+      {
+        "factor": "environmental_context",
+        "contribution": 21,
+        "derived_from": ["asset", "blast_radius"],
+        "reasoning": "Environmental risk based on asset criticality and exposure (high impact: 85%)"
+      },
+      {
+        "factor": "remediation_gap",
+        "contribution": 10,
+        "derived_from": ["defaults"],
+        "reasoning": "Remediation posture based on patch availability and compliance (moderate impact: 50%)"
+      },
+      {
+        "factor": "lateral_risk",
+        "contribution": 6,
+        "derived_from": ["blast_radius"],
+        "reasoning": "Lateral movement potential based on blast radius (moderate impact: 52%)"
+      }
+    ]
+  }
+}
+```
+
+Every point is accounted for. Factors sum to 89. No hand-waving. No black boxes.
+
+</details>
+
+## Real-World Use Case: Triage 10,000 Vulnerabilities in Seconds
+
+Your vulnerability scanner just dumped 10,000 CVEs on your team. Half are "critical" by CVSS alone. Your team has capacity to fix 200 this sprint. **Which 200?**
+
+CVSS can't tell you. It doesn't know that CVE-2024-1234 targets your crown jewel payment service, has a weaponized exploit in the wild, and there's no patch available. Meanwhile CVE-2024-5678 is also CVSS 9.8 but sits on an internal dev box with no network exposure and a patch deployed last week.
+
+ORES can tell you. Feed it everything you know:
+
+```bash
+# Score a vulnerability on your payment service (crown jewel, internet-facing)
+echo '{
+  "apiVersion": "ores.dev/v1",
+  "kind": "EvaluationRequest",
+  "signals": {
+    "cvss":         {"base_score": 9.8},
+    "epss":         {"probability": 0.92, "percentile": 0.98},
+    "nist":         {"severity": "critical", "cwe": "CWE-502"},
+    "threat_intel": {"actively_exploited": true, "ransomware_associated": true},
+    "asset":        {"criticality": "crown_jewel", "network_exposure": true, "data_classification": "pii"},
+    "blast_radius": {"affected_systems": 340, "lateral_movement_possible": true},
+    "compliance":   {"frameworks_affected": ["pci_dss", "hipaa"], "regulatory_impact": "critical"},
+    "patch":        {"patch_available": false}
+  }
+}' | ores evaluate -o table
+```
+
+```text
+Score:       94 / 100
+Label:       CRITICAL
+Confidence:  1.00
+Model:       0.1.0-preview
+
+Factors:
+  base_vulnerability     29   [cvss, nist]         Base severity (high impact: 98%)
+  exploitability         25   [epss, threat_intel]  Threat landscape (high impact: 93%)
+  environmental_context  22   [asset, blast_radius] Asset criticality (high impact: 93%)
+  remediation_gap        12   [compliance]          Remediation posture (moderate impact: 50%)
+  lateral_risk            6   [blast_radius]        Lateral movement (moderate impact: 52%)
+```
+
+Now score the same CVSS 9.8 on the internal dev box:
+
+```bash
+echo '{
+  "apiVersion": "ores.dev/v1",
+  "kind": "EvaluationRequest",
+  "signals": {
+    "cvss":         {"base_score": 9.8},
+    "epss":         {"probability": 0.92, "percentile": 0.98},
+    "nist":         {"severity": "critical", "cwe": "CWE-502"},
+    "threat_intel": {"actively_exploited": true, "ransomware_associated": true},
+    "asset":        {"criticality": "low", "network_exposure": false, "data_classification": "internal"},
+    "blast_radius": {"affected_systems": 1, "lateral_movement_possible": false},
+    "patch":        {"patch_available": true, "patch_age_days": 3, "compensating_control": true}
+  }
+}' | ores evaluate -o table
+```
+
+```text
+Score:       52 / 100
+Label:       MEDIUM
+Confidence:  1.00
+Model:       0.1.0-preview
+
+Factors:
+  base_vulnerability     29   [cvss, nist]         Base severity (high impact: 98%)
+  exploitability         20   [epss, threat_intel]  Threat landscape (high impact: 83%)
+  environmental_context   3   [asset, blast_radius] Asset criticality (low impact: 14%)
+  remediation_gap         0   [patch]               Remediation posture (low impact: 2%)
+  lateral_risk            0   [blast_radius]        Lateral movement (low impact: 0%)
+```
+
+**Same CVE. Same CVSS. Completely different risk.** The payment service scores 94 (Critical). The dev box scores 52 (Medium). Now your team knows exactly where to focus.
+
+### Pipe it into your workflow
+
+```bash
+# Score all CVEs from your scanner, sort by ORES score, take the top 200
+cat scanner-output.json | jq -c '.cves[]' | while read cve; do
+  echo "$cve" | ores evaluate -o json
+done | jq -s 'sort_by(.score) | reverse | .[0:200]'
+```
+
+```bash
+# Gate your CI pipeline - fail if any dependency has ORES score >= 90
+ores evaluate -f dependency-signals.json -o json | jq -e '.score < 90'
+```
+
+```bash
+# Feed scores into your ticketing system
+ores evaluate -f signals.json -o json | \
+  jq '{priority: (if .score >= 90 then "P0" elif .score >= 70 then "P1" elif .score >= 40 then "P2" else "P3" end), score: .score, label: .label}'
+```
 
 ## How It Works
 
@@ -86,27 +233,6 @@ ORES doesn't care where your data comes from. It accepts **8 signal types** (and
 
 > **Don't have all 8?** That's fine. ORES gracefully degrades - two signals get you a score with lower confidence, eight signals get you the full picture. No signal is required. The engine scores what it gets.
 
-## The Score
-
-```json
-{
-  "score": 89,
-  "label": "high",
-  "explanation": {
-    "confidence": 1.0,
-    "factors": [
-      {"factor": "base_vulnerability",    "contribution": 27, "reasoning": "..."},
-      {"factor": "exploitability",         "contribution": 25, "reasoning": "..."},
-      {"factor": "environmental_context",  "contribution": 21, "reasoning": "..."},
-      {"factor": "remediation_gap",        "contribution": 10, "reasoning": "..."},
-      {"factor": "lateral_risk",           "contribution":  6, "reasoning": "..."}
-    ]
-  }
-}
-```
-
-Every point is accounted for. Factor contributions **always sum to the total score**. No hand-waving. No black boxes. Your auditors will love you. (Your auditors will still not be fun at parties, but that's not our problem.)
-
 ## Three Ways to Deploy
 
 | Mode | Binary | For When You... |
@@ -116,6 +242,64 @@ Every point is accounted for. Factor contributions **always sum to the total sco
 | **WASM** | `ores.wasm` | Want to embed scoring in browsers, edge runtimes, or that one microservice written in Rust that nobody wants to touch. |
 
 All three use the **exact same engine**. Same input, same score, whether you're running `ores evaluate` on your laptop or calling the daemon from a Kubernetes pod in `us-east-1`.
+
+<details>
+<summary><strong>Daemon example (curl)</strong></summary>
+
+```bash
+# Start the daemon
+docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:latest
+
+# Score via HTTP
+curl -s -X POST http://localhost:8080/ores.v1.OresService/Evaluate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "api_version": "ores.dev/v1",
+    "kind": "EvaluationRequest",
+    "signals": {
+      "fields": {
+        "cvss": {"structValue": {"fields": {"base_score": {"numberValue": 9.8}}}},
+        "epss": {"structValue": {"fields": {"probability": {"numberValue": 0.95}}}}
+      }
+    }
+  }'
+```
+
+</details>
+
+<details>
+<summary><strong>Go library example</strong></summary>
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+
+    "github.com/rigsecurity/ores/pkg/engine"
+    "github.com/rigsecurity/ores/pkg/score"
+)
+
+func main() {
+    e := engine.New()
+
+    result, _ := e.Evaluate(context.Background(), &score.EvaluationRequest{
+        APIVersion: score.APIVersion,
+        Kind:       score.KindEvaluationRequest,
+        Signals: map[string]any{
+            "cvss":         map[string]any{"base_score": 9.8},
+            "threat_intel": map[string]any{"actively_exploited": true},
+            "asset":        map[string]any{"criticality": "crown_jewel"},
+        },
+    })
+
+    fmt.Printf("Score: %d (%s)\n", result.Score, result.Label)
+    // Output: Score: 76 (high)
+}
+```
+
+</details>
 
 ## Why Not Just Use CVSS?
 
@@ -138,6 +322,9 @@ Great. Look at the factor breakdown, find the signal that's wrong, fix your data
 
 **"What about my proprietary risk model?"**
 Keep it. Use ORES as a universal baseline for cross-tool comparison. Your model is for your decisions; ORES is for speaking a common language.
+
+**"What about SSVC, CISA KEV, or other frameworks?"**
+They're complementary, not competing. ORES can ingest signals from any framework. We plan to add dedicated parsers for SSVC decision points, KEV status, and CISA advisories. The more data you feed it, the better the score.
 
 ## Project Status
 
