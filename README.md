@@ -106,7 +106,7 @@ echo '{
   "kind": "EvaluationResult",
   "score": 80,
   "label": "high",
-  "version": "0.1.0-preview",
+  "version": "0.2.0",
   "explanation": {
     "signals_provided": 5,
     "signals_used": 5,
@@ -183,7 +183,7 @@ echo '{
 ```text
 Score:         88
 Label:         high
-Version:       0.1.0-preview
+Version:       0.2.0
 Confidence:    1.00
 Signals used:  8 / 8
 
@@ -217,7 +217,7 @@ echo '{
 ```text
 Score:         58
 Label:         medium
-Version:       0.1.0-preview
+Version:       0.2.0
 Confidence:    0.93
 Signals used:  7 / 7
 
@@ -274,7 +274,7 @@ ORES doesn't care where your data comes from. It accepts **8 signal types** (and
 | Mode | Binary | For When You... |
 |------|--------|-----------------|
 | **CLI** | `ores` | Just want to score something from the terminal. Like `curl` but for risk. |
-| **Daemon** | `oresd` | Need a central scoring service. HTTP + gRPC via ConnectRPC. Health checks included because we're not savages. |
+| **Daemon** | `oresd` | Need a central scoring service. HTTP + gRPC via ConnectRPC. Built-in TLS/mTLS, rate limiting, and security headers. |
 | **WASM** | `ores.wasm` | Want to embed scoring in browsers, edge runtimes, or that one microservice written in Rust that nobody wants to touch. |
 
 All three use the **exact same engine**. Same input, same score, whether you're running `ores evaluate` on your laptop or calling the daemon from a Kubernetes pod in `us-east-1`.
@@ -283,8 +283,16 @@ All three use the **exact same engine**. Same input, same score, whether you're 
 <summary><strong>Daemon example (curl)</strong></summary>
 
 ```bash
-# Start the daemon
+# Start the daemon (plain HTTP)
 docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:latest
+
+# Or with TLS
+docker run -p 8443:8443 \
+  -v /path/to/certs:/certs:ro \
+  -e ORES_PORT=:8443 \
+  -e ORES_TLS_CERT=/certs/server.crt \
+  -e ORES_TLS_KEY=/certs/server.key \
+  ghcr.io/rigsecurity/oresd:latest
 
 # Score via HTTP
 curl -s -X POST http://localhost:8080/ores.v1.OresService/Evaluate \
@@ -364,11 +372,12 @@ They're complementary, not competing. ORES can ingest signals from any framework
 
 ## Project Status
 
-ORES is in **preview** (`v0.1.0-preview`). The architecture is production-ready; the scoring model weights are being refined through ongoing ML simulation research. The API surface is stable. The model will evolve - that's what semantic versioning is for.
+ORES is in **preview** (`v0.2.0`). The architecture is production-ready; the scoring model weights are being refined through ongoing ML simulation research. The API surface is stable. The model will evolve - that's what semantic versioning is for.
 
 **What's here today:**
 - Core engine with 8 signal types
 - CLI, daemon (ConnectRPC), and WASM module
+- Built-in TLS/mTLS, per-IP rate limiting, request body limits, security headers, CORS
 - Full test suite with race detector
 - CI/CD with GoReleaser, multi-platform releases, Cosign signing
 - [Complete documentation](https://rigsecurity.github.io/ores/)

@@ -60,43 +60,65 @@ The daemon starts on port `8080` by default and logs to stdout in JSON format:
 
 ---
 
-## TLS / mTLS
+## :material-lock: TLS / mTLS
 
 The daemon supports built-in TLS and mutual TLS (mTLS) via environment variables. When TLS is not configured, the daemon serves plain HTTP (unchanged default behavior).
+
+!!! info "Certificate rotation"
+    TLS certificates are loaded once at startup. To pick up rotated certificates (e.g., from cert-manager or Let's Encrypt), restart the daemon. Graceful shutdown ensures zero dropped requests during restarts.
 
 ### TLS
 
 Provide a certificate and key to enable HTTPS:
 
-```bash
-ORES_TLS_CERT=/path/to/server.crt \
-ORES_TLS_KEY=/path/to/server.key \
-oresd
-```
+=== ":material-console: Local"
 
-Docker:
+    ```bash
+    ORES_TLS_CERT=/path/to/server.crt \
+    ORES_TLS_KEY=/path/to/server.key \
+    oresd
+    ```
 
-```bash
-docker run -p 8443:8443 \
-  -v /path/to/certs:/certs:ro \
-  -e ORES_PORT=:8443 \
-  -e ORES_TLS_CERT=/certs/server.crt \
-  -e ORES_TLS_KEY=/certs/server.key \
-  ghcr.io/rigsecurity/oresd:latest
-```
+=== ":material-docker: Docker"
+
+    ```bash
+    docker run -p 8443:8443 \
+      -v /path/to/certs:/certs:ro \
+      -e ORES_PORT=:8443 \
+      -e ORES_TLS_CERT=/certs/server.crt \
+      -e ORES_TLS_KEY=/certs/server.key \
+      ghcr.io/rigsecurity/oresd:latest
+    ```
 
 ### mTLS (mutual TLS)
 
 Add a client CA to require and verify client certificates:
 
-```bash
-ORES_TLS_CERT=/path/to/server.crt \
-ORES_TLS_KEY=/path/to/server.key \
-ORES_TLS_CLIENT_CA=/path/to/ca.crt \
-oresd
-```
+=== ":material-console: Local"
+
+    ```bash
+    ORES_TLS_CERT=/path/to/server.crt \
+    ORES_TLS_KEY=/path/to/server.key \
+    ORES_TLS_CLIENT_CA=/path/to/ca.crt \
+    oresd
+    ```
+
+=== ":material-docker: Docker"
+
+    ```bash
+    docker run -p 8443:8443 \
+      -v /path/to/certs:/certs:ro \
+      -e ORES_PORT=:8443 \
+      -e ORES_TLS_CERT=/certs/server.crt \
+      -e ORES_TLS_KEY=/certs/server.key \
+      -e ORES_TLS_CLIENT_CA=/certs/ca.crt \
+      ghcr.io/rigsecurity/oresd:latest
+    ```
 
 Clients must present a certificate signed by the specified CA. Connections without a valid client certificate are rejected at the TLS handshake level.
+
+!!! tip "When to use mTLS"
+    Use mTLS when deploying `oresd` as a standalone service that should only accept requests from authenticated internal services. For sidecar deployments where the pod network is trusted, plain TLS or even plain HTTP may be sufficient.
 
 ### TLS Version
 
@@ -121,7 +143,7 @@ TLS 1.3 cipher suites are managed by Go's standard library and are always strong
 
 ---
 
-## Security
+## :material-shield-check: Security
 
 ### Request Size Limits
 
@@ -133,6 +155,9 @@ ORES_MAX_REQUEST_BYTES=0 oresd         # disable limit
 ```
 
 Requests exceeding the limit receive a `413 Request Entity Too Large` response.
+
+!!! note "Body size and protocol framing"
+    The limit applies to the raw HTTP request body, which includes any protocol framing overhead (e.g., gRPC frame headers). The default 1 MB is generous for typical evaluation requests (under 10 KB).
 
 ### Rate Limiting
 
@@ -166,9 +191,8 @@ ORES_CORS_ORIGINS="https://app.example.com,https://dashboard.example.com" oresd
 ORES_CORS_ORIGINS="*" oresd  # allow all origins (development only)
 ```
 
-```bash
-ORES_PORT=:9090 oresd
-```
+!!! warning "CORS wildcard"
+    Setting `ORES_CORS_ORIGINS="*"` allows any website to call your daemon from a browser. Use this only for local development. In production, list specific origins.
 
 ---
 

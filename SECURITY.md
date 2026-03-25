@@ -90,9 +90,10 @@ ORES is a **deterministic scoring engine** that does not connect to external net
 
 Nonetheless, several areas deserve particular attention from a security perspective:
 
-- **Protobuf deserialization:** Malformed or oversized input may cause unexpected behavior. Always set request size limits in the daemon.
+- **Protobuf deserialization:** Malformed or oversized input may cause unexpected behavior. The daemon enforces a 1 MB request body limit by default (`ORES_MAX_REQUEST_BYTES`). Adjust this limit based on your deployment needs.
 - **WASM sandbox:** The WASM build runs inside a WASI host. Ensure your WASI runtime is up to date.
 - **Score integrity:** ORES scores are advisory. Do not rely on them as the sole input to automated, irreversible security decisions.
+- **Transport security:** The daemon supports built-in TLS and mutual TLS (mTLS) via `ORES_TLS_CERT`, `ORES_TLS_KEY`, and `ORES_TLS_CLIENT_CA` environment variables. When TLS is not configured, the daemon serves plain HTTP. Deploy behind a TLS-terminating proxy or enable built-in TLS for production use.
 
 ## Contact
 
