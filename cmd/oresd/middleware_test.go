@@ -89,3 +89,69 @@ func TestMaxBodyMiddleware(t *testing.T) {
 		require.IsType(t, echoBodyHandler, handler)
 	})
 }
+
+func TestRateLimitMiddleware(t *testing.T) {
+	t.Run("allows requests under limit", func(t *testing.T) {
+		handler := rateLimitMiddleware(10, 10, okHandler)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.RemoteAddr = "192.168.1.1:12345"
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("blocks when rate exceeded", func(t *testing.T) {
+		// Allow 1 request with burst of 1 — the second request should be rejected.
+		handler := rateLimitMiddleware(1, 1, okHandler)
+
+		req1 := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req1.RemoteAddr = "10.0.0.1:1111"
+		rec1 := httptest.NewRecorder()
+		handler.ServeHTTP(rec1, req1)
+		assert.Equal(t, http.StatusOK, rec1.Code)
+
+		req2 := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req2.RemoteAddr = "10.0.0.1:2222"
+		rec2 := httptest.NewRecorder()
+		handler.ServeHTTP(rec2, req2)
+		assert.Equal(t, http.StatusTooManyRequests, rec2.Code)
+		assert.Equal(t, "1", rec2.Header().Get("Retry-After"))
+	})
+
+	t.Run("exempts healthz", func(t *testing.T) {
+		handler := rateLimitMiddleware(1, 1, okHandler)
+
+		// Exhaust the limiter with a normal request.
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.RemoteAddr = "10.0.0.2:1111"
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		// Health probe should still pass.
+		hReq := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+		hReq.RemoteAddr = "10.0.0.2:2222"
+		hRec := httptest.NewRecorder()
+		handler.ServeHTTP(hRec, hReq)
+		assert.Equal(t, http.StatusOK, hRec.Code)
+	})
+
+	t.Run("exempts readyz", func(t *testing.T) {
+		handler := rateLimitMiddleware(1, 1, okHandler)
+
+		// Exhaust the limiter with a normal request.
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.RemoteAddr = "10.0.0.3:1111"
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		// Readiness probe should still pass.
+		rReq := httptest.NewRequest(http.MethodGet, "/readyz", nil)
+		rReq.RemoteAddr = "10.0.0.3:2222"
+		rRec := httptest.NewRecorder()
+		handler.ServeHTTP(rRec, rReq)
+		assert.Equal(t, http.StatusOK, rRec.Code)
+	})
+}

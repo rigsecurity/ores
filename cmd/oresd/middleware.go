@@ -1,6 +1,13 @@
 package main
 
-import "net/http"
+import (
+	"net"
+	"net/http"
+	"sync"
+	"time"
+
+	"golang.org/x/time/rate"
+)
 
 // securityHeadersMiddleware sets security-related response headers on every request.
 // When tlsEnabled is true, HSTS is also set.
@@ -27,6 +34,102 @@ func maxBodyMiddleware(limit int64, next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, limit)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// ipLimiter pairs a rate limiter with a last-seen timestamp for per-IP tracking.
+type ipLimiter struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
+// rateLimiterStore manages per-IP rate limiters with automatic cleanup of idle entries.
+type rateLimiterStore struct {
+	limiters sync.Map
+	rps      rate.Limit
+	burst    int
+}
+
+// cleanupInterval is how often stale IP entries are evicted.
+const cleanupInterval = 5 * time.Minute
+
+// idleTimeout is the maximum idle time before an IP entry is evicted.
+const idleTimeout = 10 * time.Minute
+
+// newRateLimiterStore creates a store and starts a background cleanup goroutine.
+func newRateLimiterStore(rps float64, burst int) *rateLimiterStore {
+	s := &rateLimiterStore{
+		rps:   rate.Limit(rps),
+		burst: burst,
+	}
+
+	go s.cleanup()
+
+	return s
+}
+
+// get returns the rate limiter for the given IP, creating one if necessary.
+func (s *rateLimiterStore) get(ip string) *rate.Limiter {
+	now := time.Now()
+
+	if v, ok := s.limiters.Load(ip); ok {
+		entry := v.(*ipLimiter)
+		entry.lastSeen = now
+
+		return entry.limiter
+	}
+
+	limiter := rate.NewLimiter(s.rps, s.burst)
+	s.limiters.Store(ip, &ipLimiter{limiter: limiter, lastSeen: now})
+
+	return limiter
+}
+
+// cleanup periodically evicts IP entries that have been idle longer than idleTimeout.
+func (s *rateLimiterStore) cleanup() {
+	ticker := time.NewTicker(cleanupInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		cutoff := time.Now().Add(-idleTimeout)
+
+		s.limiters.Range(func(key, value any) bool {
+			entry := value.(*ipLimiter)
+			if entry.lastSeen.Before(cutoff) {
+				s.limiters.Delete(key)
+			}
+
+			return true
+		})
+	}
+}
+
+// rateLimitMiddleware enforces per-IP rate limiting.
+// Health probes (/healthz, /readyz) are exempted.
+func rateLimitMiddleware(rps float64, burst int, next http.Handler) http.Handler {
+	store := newRateLimiterStore(rps, burst)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Exempt health probes from rate limiting.
+		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+			next.ServeHTTP(w, r)
+
+			return
+		}
+
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+
+		if !store.get(ip).Allow() {
+			w.Header().Set("Retry-After", "1")
+			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
