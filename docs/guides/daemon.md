@@ -37,7 +37,7 @@ The `oresd` daemon exposes the ORES engine as a long-running HTTP service using 
 The daemon starts on port `8080` by default and logs to stdout in JSON format:
 
 ```json
-{"time":"2026-03-25T12:00:00Z","level":"INFO","msg":"oresd starting","addr":":8080"}
+{"time":"2026-03-25T12:00:00Z","level":"INFO","msg":"oresd starting","addr":":8080","tls":false,"mtls":false}
 ```
 
 ---
@@ -154,6 +154,7 @@ The daemon automatically adds the following headers to every response:
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY` |
 | `Content-Security-Policy` | `default-src 'none'` |
+| `Referrer-Policy` | `no-referrer` |
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains` _(TLS only)_ |
 
 ### CORS
@@ -205,7 +206,7 @@ curl -s -X POST http://localhost:8080/ores.v1.OresService/Evaluate \
   "kind": "EvaluationResult",
   "score": 87,
   "label": "high",
-  "version": "0.1.0-preview",
+  "version": "0.2.0",
   "explanation": {
     "signalsProvided": 4,
     "signalsUsed": 4,
@@ -261,7 +262,7 @@ curl -s -X POST http://localhost:8080/ores.v1.OresService/GetVersion \
 
 ```json
 {
-  "version": "0.1.0-preview"
+  "version": "0.2.0"
 }
 ```
 
@@ -422,6 +423,7 @@ Every `Evaluate` call is automatically logged to stdout:
   "level": "INFO",
   "msg": "audit",
   "procedure": "/ores.v1.OresService/Evaluate",
+  "remote_addr": "10.0.0.1:54321",
   "status": 200,
   "latency_ms": 1
 }
