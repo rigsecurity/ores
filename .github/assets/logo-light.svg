@@ -1,20 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
-  <!-- Calculator icon - minimal outline -->
-  <g transform="translate(16, 12)">
-    <rect x="0" y="0" width="38" height="52" rx="6" fill="none" stroke="#11B897" stroke-width="2"/>
-    <rect x="6" y="6" width="26" height="12" rx="2" fill="#11B897" opacity="0.12"/>
-    <text x="19" y="16" font-family="monospace" font-size="10" font-weight="700" fill="#11B897" text-anchor="middle">89</text>
-    <circle cx="11" cy="28" r="2.5" fill="#11B897" opacity="0.5"/>
-    <circle cx="19" cy="28" r="2.5" fill="#746BE9" opacity="0.5"/>
-    <circle cx="27" cy="28" r="2.5" fill="#11B897" opacity="0.3"/>
-    <circle cx="11" cy="36" r="2.5" fill="#746BE9" opacity="0.3"/>
-    <circle cx="19" cy="36" r="2.5" fill="#11B897" opacity="0.3"/>
-    <circle cx="27" cy="36" r="2.5" fill="#746BE9" opacity="0.5"/>
-    <circle cx="11" cy="44" r="2.5" fill="#11B897" opacity="0.3"/>
-    <circle cx="19" cy="44" r="2.5" fill="#746BE9" opacity="0.3"/>
-    <circle cx="27" cy="44" r="2.5" fill="#11B897" opacity="0.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <!-- Shield with gauge arc - security meets scoring -->
+  <g transform="translate(4, 2)">
+    <path d="M22 4 L38 10 C38 10 39 26 32 35 C28 40 22 42 22 42 C22 42 16 40 12 35 C5 26 6 10 6 10 L22 4Z"
+          fill="none" stroke="#11B897" stroke-width="1.5" opacity="0.8"/>
+    <path d="M13 28 A11 11 0 1 1 31 28" fill="none" stroke="#11B897" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+    <path d="M13 28 A11 11 0 1 1 29 20" fill="none" stroke="#11B897" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="22" cy="24" r="2" fill="#11B897"/>
   </g>
 
-  <!-- ORES text -->
-  <text x="72" y="52" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="46" font-weight="800" letter-spacing="-1.5" fill="#0A0A0F">ORES</text>
+  <text x="54" y="34" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="32" font-weight="800" letter-spacing="-1" fill="#1a1a2e">ORES</text>
 </svg>

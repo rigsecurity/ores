@@ -1,14 +1,14 @@
 <p align="center">
+  <br>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo-light.svg">
-    <img alt="ORES" src=".github/assets/logo-dark.svg" width="280">
+    <img alt="ORES" src=".github/assets/logo-dark.svg" width="240">
   </picture>
-</p>
-
-<p align="center">
+  <br><br>
   <strong>Open Risk Evaluation & Scoring</strong><br>
   <em>Because "it depends" is not a risk score.</em>
+  <br><br>
 </p>
 
 <p align="center">
