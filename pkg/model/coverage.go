@@ -53,3 +53,34 @@ func CalculateConfidence(dims []DimensionDef, provided map[string]bool) float64 
 	// Round to 4 decimal places to avoid IEEE 754 artifacts like 0.7000000000000001.
 	return math.Round(total*10000) / 10000
 }
+
+// b4Axes defines the three adjustment axes for B4 confidence calculation.
+var b4Axes = []struct {
+	signals []string
+}{
+	{signals: []string{"asset"}},              // environmental axis
+	{signals: []string{"blast_radius"}},       // blast radius axis
+	{signals: []string{"patch", "compliance"}}, // remediation axis
+}
+
+// CalculateB4Confidence returns a value in [0.0, 1.0] representing how many of
+// the three B4 adjustment axes have at least one signal provided.
+func CalculateB4Confidence(provided map[string]bool) float64 {
+	covered := 0
+
+	for _, axis := range b4Axes {
+		for _, sig := range axis.signals {
+			if provided[sig] {
+				covered++
+				break
+			}
+		}
+	}
+
+	if len(b4Axes) == 0 {
+		return 0
+	}
+
+	total := float64(covered) / float64(len(b4Axes))
+	return math.Round(total*10000) / 10000
+}
