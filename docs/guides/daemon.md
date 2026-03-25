@@ -49,6 +49,121 @@ The daemon starts on port `8080` by default and logs to stdout in JSON format:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ORES_PORT` | `:8080` | TCP address the daemon listens on. Must include the leading colon. |
+| `ORES_TLS_CERT` | _(unset)_ | Path to PEM-encoded server certificate. Enables TLS when set with `ORES_TLS_KEY`. |
+| `ORES_TLS_KEY` | _(unset)_ | Path to PEM-encoded server private key. Required when `ORES_TLS_CERT` is set. |
+| `ORES_TLS_CLIENT_CA` | _(unset)_ | Path to PEM-encoded CA bundle for client certificate verification. Enables mTLS. |
+| `ORES_TLS_MIN_VERSION` | `1.2` | Minimum TLS version: `1.2` or `1.3`. |
+| `ORES_MAX_REQUEST_BYTES` | `1048576` | Maximum request body size in bytes. Set to `0` to disable. |
+| `ORES_RATE_LIMIT` | `0` | Maximum requests per second per source IP. `0` disables rate limiting. |
+| `ORES_RATE_BURST` | _(= rate limit)_ | Token bucket burst size. Defaults to `ORES_RATE_LIMIT` value. |
+| `ORES_CORS_ORIGINS` | _(unset)_ | Comma-separated allowed CORS origins, or `*` for any. |
+
+---
+
+## TLS / mTLS
+
+The daemon supports built-in TLS and mutual TLS (mTLS) via environment variables. When TLS is not configured, the daemon serves plain HTTP (unchanged default behavior).
+
+### TLS
+
+Provide a certificate and key to enable HTTPS:
+
+```bash
+ORES_TLS_CERT=/path/to/server.crt \
+ORES_TLS_KEY=/path/to/server.key \
+oresd
+```
+
+Docker:
+
+```bash
+docker run -p 8443:8443 \
+  -v /path/to/certs:/certs:ro \
+  -e ORES_PORT=:8443 \
+  -e ORES_TLS_CERT=/certs/server.crt \
+  -e ORES_TLS_KEY=/certs/server.key \
+  ghcr.io/rigsecurity/oresd:latest
+```
+
+### mTLS (mutual TLS)
+
+Add a client CA to require and verify client certificates:
+
+```bash
+ORES_TLS_CERT=/path/to/server.crt \
+ORES_TLS_KEY=/path/to/server.key \
+ORES_TLS_CLIENT_CA=/path/to/ca.crt \
+oresd
+```
+
+Clients must present a certificate signed by the specified CA. Connections without a valid client certificate are rejected at the TLS handshake level.
+
+### TLS Version
+
+By default, the minimum TLS version is 1.2. To require TLS 1.3:
+
+```bash
+ORES_TLS_MIN_VERSION=1.3 oresd
+```
+
+### Cipher Suites
+
+When using TLS 1.2, only AEAD cipher suites are allowed (no CBC, no RC4):
+
+- `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`
+- `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`
+- `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`
+- `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`
+- `TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256`
+- `TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256`
+
+TLS 1.3 cipher suites are managed by Go's standard library and are always strong.
+
+---
+
+## Security
+
+### Request Size Limits
+
+The daemon limits request bodies to 1 MB by default. Override with `ORES_MAX_REQUEST_BYTES`:
+
+```bash
+ORES_MAX_REQUEST_BYTES=2097152 oresd   # 2 MB
+ORES_MAX_REQUEST_BYTES=0 oresd         # disable limit
+```
+
+Requests exceeding the limit receive a `413 Request Entity Too Large` response.
+
+### Rate Limiting
+
+Per-IP rate limiting is disabled by default. Enable it with `ORES_RATE_LIMIT`:
+
+```bash
+ORES_RATE_LIMIT=100 oresd              # 100 requests/sec per IP
+ORES_RATE_LIMIT=50 ORES_RATE_BURST=100 oresd  # 50 rps sustained, 100 burst
+```
+
+Rate-limited requests receive a `429 Too Many Requests` response with a `Retry-After: 1` header. Health and readiness probes (`/healthz`, `/readyz`) are exempt.
+
+### Security Headers
+
+The daemon automatically adds the following headers to every response:
+
+| Header | Value |
+|--------|-------|
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` |
+| `Content-Security-Policy` | `default-src 'none'` |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains` _(TLS only)_ |
+
+### CORS
+
+CORS is disabled by default. Enable it by listing allowed origins:
+
+```bash
+ORES_CORS_ORIGINS="https://app.example.com,https://dashboard.example.com" oresd
+ORES_CORS_ORIGINS="*" oresd  # allow all origins (development only)
+```
 
 ```bash
 ORES_PORT=:9090 oresd
