@@ -1,31 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
-  <defs>
-    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#35D2AE"/>
-      <stop offset="100%" stop-color="#746BE9"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Calculator icon - minimal outline -->
-  <g transform="translate(16, 12)">
-    <!-- Calculator body -->
-    <rect x="0" y="0" width="38" height="52" rx="6" fill="none" stroke="#35D2AE" stroke-width="2"/>
-    <!-- Screen -->
-    <rect x="6" y="6" width="26" height="12" rx="2" fill="#35D2AE" opacity="0.15"/>
-    <!-- Score number on screen -->
-    <text x="19" y="16" font-family="monospace" font-size="10" font-weight="700" fill="#35D2AE" text-anchor="middle">89</text>
-    <!-- Button grid -->
-    <circle cx="11" cy="28" r="2.5" fill="#35D2AE" opacity="0.5"/>
-    <circle cx="19" cy="28" r="2.5" fill="#746BE9" opacity="0.5"/>
-    <circle cx="27" cy="28" r="2.5" fill="#35D2AE" opacity="0.3"/>
-    <circle cx="11" cy="36" r="2.5" fill="#746BE9" opacity="0.3"/>
-    <circle cx="19" cy="36" r="2.5" fill="#35D2AE" opacity="0.3"/>
-    <circle cx="27" cy="36" r="2.5" fill="#746BE9" opacity="0.5"/>
-    <circle cx="11" cy="44" r="2.5" fill="#35D2AE" opacity="0.3"/>
-    <circle cx="19" cy="44" r="2.5" fill="#746BE9" opacity="0.3"/>
-    <circle cx="27" cy="44" r="2.5" fill="#35D2AE" opacity="0.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" fill="none">
+  <!-- Shield with gauge arc - security meets scoring -->
+  <g transform="translate(4, 2)">
+    <!-- Shield outline -->
+    <path d="M22 4 L38 10 C38 10 39 26 32 35 C28 40 22 42 22 42 C22 42 16 40 12 35 C5 26 6 10 6 10 L22 4Z"
+          fill="none" stroke="#35D2AE" stroke-width="1.5" opacity="0.8"/>
+    <!-- Gauge arc inside shield -->
+    <path d="M13 28 A11 11 0 1 1 31 28" fill="none" stroke="#35D2AE" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+    <!-- Score indicator on gauge (pointing high) -->
+    <path d="M13 28 A11 11 0 1 1 29 20" fill="none" stroke="#35D2AE" stroke-width="2" stroke-linecap="round"/>
+    <!-- Gauge center dot -->
+    <circle cx="22" cy="24" r="2" fill="#35D2AE"/>
   </g>
 
-  <!-- ORES text -->
-  <text x="72" y="52" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="46" font-weight="800" letter-spacing="-1.5" fill="#FAFAFA">ORES</text>
+  <!-- ORES wordmark -->
+  <text x="54" y="34" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="32" font-weight="800" letter-spacing="-1" fill="#FAFAFA">ORES</text>
 </svg>
