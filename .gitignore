@@ -21,3 +21,6 @@ coverage.html
 
 # Documentation build output
 site/
+
+# Superpowers specs and plans (auto-generated, not for version control)
+docs/superpowers/
