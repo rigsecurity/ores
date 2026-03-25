@@ -19,9 +19,62 @@ The `ores` CLI evaluates risk signals from the terminal, scripts, and CI pipelin
 !!! info "Prerequisites"
     **None.** The CLI is a single, statically linked binary with zero runtime dependencies.
 
+=== ":material-apple: Homebrew"
+
+    The fastest way to install on **macOS** or **Linux**:
+
+    ```bash
+    brew install rigsecurity/tap/ores
+    ```
+
+    **Verify:**
+
+    ```bash
+    ores version
+    ```
+
+=== ":material-microsoft-windows: Scoop"
+
+    On **Windows**, use [Scoop](https://scoop.sh){ target=_blank }:
+
+    ```powershell
+    scoop bucket add rig https://github.com/rigsecurity/scoop-bucket
+    scoop install ores
+    ```
+
+    **Verify:**
+
+    ```powershell
+    ores version
+    ```
+
+=== ":material-debian: deb / :material-redhat: rpm"
+
+    Native packages for Debian/Ubuntu and Fedora/RHEL are attached to every [GitHub release](https://github.com/rigsecurity/ores/releases){ target=_blank }.
+
+    === "Debian / Ubuntu"
+
+        ```bash
+        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/ores_0.1.0-beta.1_linux_amd64.deb
+        sudo dpkg -i ores_0.1.0-beta.1_linux_amd64.deb
+        ```
+
+    === "Fedora / RHEL"
+
+        ```bash
+        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/ores_0.1.0-beta.1_linux_amd64.rpm
+        sudo rpm -i ores_0.1.0-beta.1_linux_amd64.rpm
+        ```
+
+    **Verify:**
+
+    ```bash
+    ores version
+    ```
+
 === ":material-language-go: Go Install"
 
-    If you have **Go 1.25+** on your machine, this is the fastest path:
+    If you have **Go 1.25+** on your machine:
 
     ```bash
     go install github.com/rigsecurity/ores/cmd/ores@latest
@@ -38,10 +91,6 @@ The `ores` CLI evaluates risk signals from the terminal, scripts, and CI pipelin
 
     ```bash
     ores version
-    ```
-
-    ```
-    ores version 0.1.0-preview (model: 0.1.0-preview)
     ```
 
 === ":material-download: Pre-built Binary"
@@ -80,10 +129,6 @@ The `ores` CLI evaluates risk signals from the terminal, scripts, and CI pipelin
 
     ```bash
     ores version
-    ```
-
-    ```
-    ores version 0.1.0-preview (model: 0.1.0-preview)
     ```
 
 === ":material-source-branch: From Source"
@@ -140,6 +185,33 @@ The `oresd` daemon exposes a long-running **ConnectRPC / HTTP** service. Use it 
 
     ```bash
     oresd &
+    curl -s http://localhost:8080/healthz
+    # 200 OK
+    ```
+
+=== ":material-debian: deb / :material-redhat: rpm"
+
+    Native packages include a **systemd service file** for easy deployment:
+
+    === "Debian / Ubuntu"
+
+        ```bash
+        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/oresd_0.1.0-beta.1_linux_amd64.deb
+        sudo dpkg -i oresd_0.1.0-beta.1_linux_amd64.deb
+        sudo systemctl enable --now oresd
+        ```
+
+    === "Fedora / RHEL"
+
+        ```bash
+        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/oresd_0.1.0-beta.1_linux_amd64.rpm
+        sudo rpm -i oresd_0.1.0-beta.1_linux_amd64.rpm
+        sudo systemctl enable --now oresd
+        ```
+
+    **Verify:**
+
+    ```bash
     curl -s http://localhost:8080/healthz
     # 200 OK
     ```
@@ -239,15 +311,16 @@ result, err := eng.Evaluate(ctx, req)
 
 ## :material-check-decagram: Quick Reference
 
-| Method | Command | Needs Go? |
+| Method | Command | Platforms |
 |--------|---------|-----------|
-| CLI via Go | `go install .../cmd/ores@latest` | Yes |
-| CLI binary | Download from [Releases](https://github.com/rigsecurity/ores/releases){ target=_blank } | No |
-| Daemon via Docker | `docker run ghcr.io/rigsecurity/oresd` | No |
-| Daemon via Go | `go install .../cmd/oresd@latest` | Yes |
-| WASM module | Download from [Releases](https://github.com/rigsecurity/ores/releases){ target=_blank } | No |
-| Go library | `go get github.com/rigsecurity/ores` | Yes |
-| From source | `git clone` + `task build` | Yes |
+| Homebrew | `brew install rigsecurity/tap/ores` | macOS, Linux |
+| Scoop | `scoop install ores` | Windows |
+| deb / rpm | Download from [Releases](https://github.com/rigsecurity/ores/releases){ target=_blank } | Linux |
+| Go install | `go install .../cmd/ores@latest` | Any (needs Go) |
+| Pre-built binary | Download from [Releases](https://github.com/rigsecurity/ores/releases){ target=_blank } | All |
+| Docker (daemon) | `docker run ghcr.io/rigsecurity/oresd` | All |
+| Go library | `go get github.com/rigsecurity/ores` | Any (needs Go) |
+| From source | `git clone` + `task build` | Any (needs Go) |
 
 ---
 
