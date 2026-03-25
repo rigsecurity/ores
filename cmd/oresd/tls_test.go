@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -8,14 +9,24 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"log/slog"
 	"math/big"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
+
+	oresv1 "github.com/rigsecurity/ores/gen/proto/ores/v1"
+	"github.com/rigsecurity/ores/gen/proto/ores/v1/oresv1connect"
+	"github.com/rigsecurity/ores/pkg/engine"
 )
 
 // generateTestCert creates a self-signed ECDSA P-256 certificate for "localhost"
@@ -33,6 +44,7 @@ func generateTestCert(t *testing.T, dir string) (certPath, keyPath string) {
 		SerialNumber: serial,
 		Subject:      pkix.Name{CommonName: "localhost"},
 		DNSNames:     []string{"localhost"},
+		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1)},
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().Add(time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
@@ -176,4 +188,67 @@ func TestBuildTLSConfig(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no valid certificates")
 	})
+}
+
+func TestTLSServerIntegration(t *testing.T) {
+	// 1. Generate a self-signed cert.
+	dir := t.TempDir()
+	certPath, keyPath := generateTestCert(t, dir)
+
+	// 2. Build a TLS config.
+	tlsCfg, err := buildTLSConfig(certPath, keyPath, "", "")
+	require.NoError(t, err)
+	require.NotNil(t, tlsCfg)
+
+	// 3. Create a real OresHandler backed by engine.New().
+	e := engine.New()
+	h := &OresHandler{engine: e}
+
+	// 4. Build the mux and wrap with middleware (TLS enabled).
+	logger := slog.New(slog.DiscardHandler)
+	mux := newMux(h, logger)
+	wrapped := applyMiddleware(mux, muxOptions{
+		maxBodyBytes: defaultMaxBodyBytes,
+		tlsEnabled:   true,
+	})
+
+	// 5. Create an httptest TLS server.
+	srv := httptest.NewUnstartedServer(wrapped)
+	srv.TLS = tlsCfg
+	srv.StartTLS()
+	t.Cleanup(srv.Close)
+
+	// 6. Create a ConnectRPC client using the test server's TLS client.
+	client := oresv1connect.NewOresServiceClient(
+		srv.Client(),
+		srv.URL,
+		connect.WithSendCompression("identity"),
+	)
+
+	// 7. Call Evaluate with a valid request.
+	signals, err := structpb.NewStruct(map[string]any{
+		"cvss": map[string]any{"base_score": 7.5},
+	})
+	require.NoError(t, err)
+
+	resp, err := client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "EvaluationRequest",
+		Signals:    signals,
+	}))
+	require.NoError(t, err)
+	require.NotNil(t, resp.Msg)
+
+	// 8. Assert score is in [0, 100].
+	assert.GreaterOrEqual(t, resp.Msg.Score, int32(0))
+	assert.LessOrEqual(t, resp.Msg.Score, int32(100))
+
+	// 9. Verify security headers on /healthz via plain HTTP GET.
+	healthResp, err := srv.Client().Get(srv.URL + "/healthz")
+	require.NoError(t, err)
+	defer healthResp.Body.Close() //nolint:errcheck // best-effort close in test
+
+	assert.Equal(t, http.StatusOK, healthResp.StatusCode)
+	assert.Equal(t, "nosniff", healthResp.Header.Get("X-Content-Type-Options"))
+	assert.Equal(t, "max-age=63072000; includeSubDomains", healthResp.Header.Get("Strict-Transport-Security"))
 }
