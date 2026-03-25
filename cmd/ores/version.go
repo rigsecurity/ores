@@ -22,8 +22,9 @@ func newVersionCmd() *cobra.Command {
 
 func runVersion(w io.Writer) error {
 	e := engine.New()
+	v := e.Version()
 
-	if _, err := fmt.Fprintln(w, e.Version()); err != nil {
+	if _, err := fmt.Fprintf(w, "ores version %s (model: %s)\n", v, v); err != nil {
 		return fmt.Errorf("writing version: %w", err)
 	}
 

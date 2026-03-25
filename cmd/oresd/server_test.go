@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -76,4 +77,55 @@ func TestGetVersionHandler(t *testing.T) {
 	require.NotNil(t, resp.Msg)
 
 	assert.Equal(t, "0.1.0-preview", resp.Msg.Version)
+}
+
+func TestEvaluateHandlerEmptySignals(t *testing.T) {
+	client := newTestClient(t)
+
+	// An empty signals struct should cause a validation error.
+	signals, err := structpb.NewStruct(map[string]any{})
+	require.NoError(t, err)
+
+	_, err = client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "EvaluationRequest",
+		Signals:    signals,
+	}))
+	require.Error(t, err)
+
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, connect.CodeInvalidArgument, connectErr.Code())
+}
+
+func newTestServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
+	e := engine.New()
+	h := &OresHandler{engine: e}
+	mux := newMux(h)
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+
+	return srv
+}
+
+func TestHealthEndpoint(t *testing.T) {
+	srv := newTestServer(t)
+
+	resp, err := srv.Client().Get(srv.URL + "/healthz")
+	require.NoError(t, err)
+	defer resp.Body.Close() //nolint:errcheck // best-effort close in test
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestReadinessEndpoint(t *testing.T) {
+	srv := newTestServer(t)
+
+	resp, err := srv.Client().Get(srv.URL + "/readyz")
+	require.NoError(t, err)
+	defer resp.Body.Close() //nolint:errcheck // best-effort close in test
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }

@@ -69,9 +69,11 @@ func runEvaluate(filePath, outputFormat string, w io.Writer) error {
 	return writeResult(result, outputFormat, w)
 }
 
+const maxInputSize = 10 << 20 // 10 MB
+
 func readInput(filePath string) ([]byte, error) {
 	if filePath == "" {
-		return io.ReadAll(os.Stdin)
+		return io.ReadAll(io.LimitReader(os.Stdin, maxInputSize))
 	}
 
 	f, err := os.Open(filePath) //nolint:gosec // path is user-supplied CLI input
@@ -80,7 +82,7 @@ func readInput(filePath string) ([]byte, error) {
 	}
 	defer f.Close() //nolint:errcheck // best-effort close on read-only file
 
-	return io.ReadAll(f)
+	return io.ReadAll(io.LimitReader(f, maxInputSize))
 }
 
 // parseRequest accepts both JSON and YAML. We try JSON first; if it fails we

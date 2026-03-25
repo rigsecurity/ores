@@ -8,7 +8,7 @@ Every `EvaluationResult` includes a `confidence` value in `[0.0, 1.0]`. Confiden
 
 ORES can always produce a score, even when only a single signal is provided. Missing signals fall back to neutral defaults - values chosen to represent "no information" for that dimension. The `confidence` value quantifies how reliable that score is.
 
-A confidence of `1.0` means every scoring dimension was covered by at least one signal you provided. A confidence of `0.0` would mean no signals were recognized. In practice, providing a CVSS score alone yields a confidence around `0.30` because only the `base_vulnerability` dimension is covered.
+A confidence of `1.0` means every scoring dimension was covered by at least one signal you provided. A confidence of `0.0` would mean no signals were recognized. In practice, providing a CVSS score alone yields a confidence around `0.15` because only half of the `base_vulnerability` dimension is covered (cvss out of two sources: cvss and nist).
 
 Think of confidence as an answer to: **"How much of the 100-point model was driven by real data versus assumptions?"**
 
@@ -30,7 +30,7 @@ For each dimension, the coverage fraction is `(sources covered) / (total sources
 
 **Examples:**
 
-- You provide only `cvss`: `base_vulnerability` is fully covered → `1.0 × 0.30 = 0.30` confidence.
+- You provide only `cvss`: half of `base_vulnerability` is covered (1 of 2 sources) → `0.5 × 0.30 = 0.15` confidence.
 - You provide `cvss` + `epss` + `threat_intel`: `base_vulnerability` fully covered, `exploitability` fully covered → `(0.30 × 1.0) + (0.25 × 1.0) = 0.55` confidence.
 - You provide all signal types: all dimensions fully covered → `1.0` confidence.
 
