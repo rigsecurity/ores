@@ -1,49 +1,132 @@
-site_name: ORES — Open Risk Evaluation & Scoring
+site_name: ORES
+site_description: "Open Risk Evaluation & Scoring — The universal, open-source engine that standardizes cybersecurity risk scoring."
 site_url: https://rigsecurity.github.io/ores/
 repo_url: https://github.com/rigsecurity/ores
 repo_name: rigsecurity/ores
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 Rig Security
 
 theme:
   name: material
+  custom_dir: docs/overrides
+  logo: assets/logo-dark.svg
+  favicon: assets/logo-dark.svg
+  icon:
+    repo: fontawesome/brands/github
+    admonition:
+      note: fontawesome/solid/note-sticky
+      tip: fontawesome/solid/bullseye
+      warning: fontawesome/solid/triangle-exclamation
+      danger: fontawesome/solid/skull-crossbones
+      example: fontawesome/solid/flask
+      info: fontawesome/solid/circle-info
   palette:
-    scheme: slate
-    primary: teal
-    accent: deep purple
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+  font:
+    text: Inter
+    code: JetBrains Mono
   features:
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.expand
+    - navigation.top
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.footer
     - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
     - search.suggest
     - search.highlight
+    - search.share
+    - toc.follow
+    - announce.dismiss
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/rigsecurity/ores
+      name: ORES on GitHub
+  generator: false
+  status:
+    new: Recently added
+    deprecated: Deprecated
 
 nav:
   - Home: index.md
   - Getting Started:
-    - Installation: getting-started/installation.md
-    - Quickstart: getting-started/quickstart.md
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
   - Concepts:
-    - Signals: concepts/signals.md
-    - Scoring: concepts/scoring.md
-    - Research & Methodology: concepts/research.md
-    - Confidence: concepts/confidence.md
+      - Signals: concepts/signals.md
+      - Scoring Model: concepts/scoring.md
+      - Research & Methodology: concepts/research.md
+      - Confidence: concepts/confidence.md
   - Guides:
-    - CLI: guides/cli.md
-    - Daemon: guides/daemon.md
-    - WASM: guides/wasm.md
-    - Library: guides/library.md
-  - API:
-    - HTTP: api/http.md
-    - gRPC: api/grpc.md
+      - CLI: guides/cli.md
+      - Daemon: guides/daemon.md
+      - Go Library: guides/library.md
+      - WASM: guides/wasm.md
+  - API Reference:
+      - HTTP / ConnectRPC: api/http.md
+      - gRPC: api/grpc.md
   - Contributing:
-    - Development: contributing/development.md
-    - Proposing Signals: contributing/signals.md
+      - Development: contributing/development.md
+      - Proposing Signals: contributing/signals.md
 
 markdown_extensions:
-  - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.details
+  - pymdownx.snippets
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.arithmatex:
+      generic: true
   - admonition
   - def_list
   - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - minify:
+      minify_html: true

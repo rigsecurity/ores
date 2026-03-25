@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="48" viewBox="0 0 44 48" fill="none">
+  <!-- Shield outline -->
+  <polygon points="22,2 42,10 40,33 22,47 4,33 2,10" fill="none" stroke="#11B897" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- Gauge arc approximated with polyline -->
+  <polyline points="10,30 8,23 10,16 15,11 22,9 29,11 34,16 36,23 34,30" fill="none" stroke="#11B897" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.35"/>
+  <!-- Active portion of gauge (right/high side) -->
+  <polyline points="22,9 29,11 34,16 36,23" fill="none" stroke="#11B897" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Needle -->
+  <line x1="22" y1="24" x2="33" y2="15" stroke="#11B897" stroke-width="2" stroke-linecap="round"/>
+  <!-- Pivot -->
+  <circle cx="22" cy="24" r="2.5" fill="#11B897"/>
+</svg>

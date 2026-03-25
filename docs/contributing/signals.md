@@ -1,67 +1,90 @@
-# Proposing a New Signal Type
+# :material-puzzle-plus-outline: Proposing a New Signal Type
 
-Signal types are the primary extension point in ORES. If your organization uses a risk data source that is not covered by the built-in signals, you can add a new signal type by implementing the `Signal` interface and registering it with the engine.
+Signal types are the primary extension point in ORES. If your organization uses a risk data source not covered by the built-in signals, you can add a new signal type by implementing the `Signal` interface and registering it with the engine.
 
 This page walks through the full process: proposing, implementing, testing, and submitting a new signal type.
 
 ---
 
-## When to Propose a New Signal
+## :material-checkbox-marked-circle-outline: When to Propose a New Signal
 
-Before implementing a new signal type, ask:
+Before investing time in implementation, verify that your signal is a good fit.
 
-1. **Is this data source distinct?** If the data could be represented by combining existing signals, use them instead.
-2. **Is it generalizable?** Signal types should be useful to multiple organizations. Highly organization-specific data (e.g., internal ticket IDs) is better handled in a custom engine build.
-3. **Can you normalize it to `[0, 1]`?** Every signal must produce normalized factor values in the `[0, 1]` range. If your data cannot be meaningfully normalized, it may not fit the model.
+!!! question "Ask yourself these three questions"
 
-If you're unsure, [open a signal request issue](https://github.com/rigsecurity/ores/issues/new?template=signal_request.yml) before investing time in implementation.
+    - [x] **Is this data source distinct?** If the data could be represented by combining existing signals, use them instead.
+    - [x] **Is it generalizable?** Signal types should be useful to multiple organizations. Highly organization-specific data (e.g., internal ticket IDs) is better handled in a custom engine build.
+    - [x] **Can you normalize it to `[0, 1]`?** Every signal must produce normalized factor values in the `[0, 1]` range. If your data cannot be meaningfully normalized, it may not fit the model.
+
+If you answered **no** to any of these, reconsider whether a new signal type is the right approach.
+
+!!! tip "Not sure? Open an issue first"
+    [Open a signal request issue](https://github.com/rigsecurity/ores/issues/new?template=signal_request.yml) to get feedback before you start coding.
 
 ---
 
-## The Signal Interface
+## :material-code-braces: The Signal Interface
 
-Every signal type must implement the `signals.Signal` interface:
+Every signal type must implement the `signals.Signal` interface defined in `pkg/signals/signal.go`:
 
 ```go
 // Signal defines the interface for a recognized signal type.
 type Signal interface {
     // Name returns the signal type identifier (e.g., "cvss", "epss").
     // Must be lowercase, underscore-separated, unique across all registered signals.
-    Name() string
+    Name() string // (1)!
 
     // Description returns a single-sentence human-readable description.
-    Description() string
+    Description() string // (2)!
 
     // Fields returns the list of accepted input field names.
     // Used for documentation and the `ores signals` / ListSignals output.
-    Fields() []string
+    Fields() []string // (3)!
 
     // Validate checks that raw is a valid input for this signal.
     // Returns a descriptive error if invalid, nil if valid.
     // Must not modify raw.
-    Validate(raw any) error
+    Validate(raw any) error // (4)!
 
     // Normalize converts raw to a NormalizedSignal (map[string]float64).
     // All factor values must be in [0.0, 1.0].
     // Must call Validate internally and return its error if validation fails.
-    Normalize(raw any) (NormalizedSignal, error)
+    Normalize(raw any) (NormalizedSignal, error) // (5)!
 }
 ```
 
+1. Lowercase `snake_case`. Must be unique across all registered signals.
+2. One sentence. Shows up in `ores signals` and `ListSignals` output.
+3. Documents the accepted JSON keys for this signal.
+4. Pure validation — must not mutate `raw`.
+5. Always calls `Validate` first. Returns normalized factors in `[0.0, 1.0]`.
+
 ---
 
-## Implementation Guide
+## :material-list-status: Implementation Guide
 
-### Step 1: Choose a signal name and factor names
+### Step 1: Choose signal and factor names
 
-Signal names use lowercase snake_case (e.g., `vendor_severity`, `sla_breach`, `exploit_db`).
+!!! abstract "Naming conventions"
 
-Factor names are the keys in the `NormalizedSignal` map. They must:
-- Use lowercase snake_case
-- Be descriptive of what the factor represents, not where it came from
-- Not collide with existing factor names (check `pkg/signals/parsers/` and `pkg/model/model.go`)
+    **Signal names** use lowercase `snake_case`:
 
-Existing factor names: `severity`, `nist_severity`, `exploit_probability`, `exploit_percentile`, `active_exploitation`, `ransomware_risk`, `asset_criticality`, `network_exposure`, `data_sensitivity`, `blast_scope`, `lateral_movement`, `remediation_available`, `patch_staleness`, `has_compensating_control`, `regulatory_severity`, `compliance_scope`.
+    :material-check: `vendor_severity`, `sla_breach`, `exploit_db`
+
+    :material-close: `VendorSeverity`, `SLA-Breach`, `exploitDB`
+
+    **Factor names** (keys in the `NormalizedSignal` map) must:
+
+    - Use lowercase `snake_case`
+    - Describe **what the factor represents**, not where it came from
+    - Not collide with existing factor names
+
+??? note "Existing factor names (for collision checking)"
+    `severity`, `nist_severity`, `exploit_probability`, `exploit_percentile`, `active_exploitation`, `ransomware_risk`, `asset_criticality`, `network_exposure`, `data_sensitivity`, `blast_scope`, `lateral_movement`, `remediation_available`, `patch_staleness`, `has_compensating_control`, `regulatory_severity`, `compliance_scope`
+
+    Check `pkg/signals/parsers/` and `pkg/model/model.go` for the latest list.
+
+---
 
 ### Step 2: Create the parser file
 
@@ -80,20 +103,16 @@ import (
 // MySignal parses <description of what this signal represents>.
 type MySignal struct{}
 
-// Name returns the signal type identifier.
 func (m *MySignal) Name() string { return "my_signal" }
 
-// Description returns a human-readable description of this signal.
 func (m *MySignal) Description() string {
     return "Short description of what this signal provides"
 }
 
-// Fields returns the list of recognized input field names.
 func (m *MySignal) Fields() []string {
     return []string{"field_one", "field_two"}
 }
 
-// Validate checks that raw is a map containing valid field values.
 func (m *MySignal) Validate(raw any) error {
     mRaw, ok := raw.(map[string]any)
     if !ok {
@@ -104,12 +123,10 @@ func (m *MySignal) Validate(raw any) error {
 
     if val, ok := mRaw["field_one"]; ok {
         hasAny = true
-
         f, ok := toFloat64(val)
         if !ok {
             return fmt.Errorf("my_signal: field_one must be a number, got %T", val)
         }
-
         if f < 0 || f > 1 {
             return fmt.Errorf("my_signal: field_one must be in [0, 1], got %v", f)
         }
@@ -117,7 +134,6 @@ func (m *MySignal) Validate(raw any) error {
 
     if val, ok := mRaw["field_two"]; ok {
         hasAny = true
-
         if _, ok := toBool(val); !ok {
             return fmt.Errorf("my_signal: field_two must be a bool, got %T", val)
         }
@@ -130,7 +146,6 @@ func (m *MySignal) Validate(raw any) error {
     return nil
 }
 
-// Normalize converts raw MySignal input to normalized factor values.
 func (m *MySignal) Normalize(raw any) (signals.NormalizedSignal, error) {
     if err := m.Validate(raw); err != nil {
         return nil, err
@@ -157,7 +172,10 @@ func (m *MySignal) Normalize(raw any) (signals.NormalizedSignal, error) {
 }
 ```
 
-The helper functions `toFloat64`, `toBool`, `toString`, and `toStringSlice` are defined in `pkg/signals/parsers/helpers.go` and are available to all parsers in the package.
+!!! info "Helper functions"
+    The helpers `toFloat64`, `toBool`, `toString`, and `toStringSlice` are defined in `pkg/signals/parsers/helpers.go` and available to all parsers in the package.
+
+---
 
 ### Step 3: Register the signal
 
@@ -173,49 +191,59 @@ func RegisterAll(r *signals.Registry) {
     r.Register(&BlastRadius{})
     r.Register(&Patch{})
     r.Register(&Compliance{})
-    r.Register(&MySignal{}) // add this line
+    r.Register(&MySignal{}) // <-- add this line
 }
 ```
 
+---
+
 ### Step 4: Update the scoring model (if needed)
 
-If your signal introduces new factor keys, they need to be wired into the scoring model in `pkg/model/model.go` (dimension scoring functions) and `pkg/model/coverage.go` (confidence calculation).
+If your signal introduces **new factor keys**, they need to be wired into the scoring model:
 
-If your signal contributes to an existing dimension, add its factor keys to the appropriate `dimDefinition.score` function. If it represents a genuinely new dimension of risk, discuss this in your issue before implementing - new dimensions require a model version bump.
+| File | What to update |
+|:-----|:---------------|
+| `pkg/model/model.go` | Dimension scoring functions |
+| `pkg/model/coverage.go` | Confidence calculation |
+
+!!! warning "New dimensions require discussion"
+    If your signal represents a genuinely **new dimension of risk** (rather than contributing to an existing one), discuss this in your issue before implementing. New dimensions require a model version bump and review from maintainers.
 
 ---
 
-## Normalization Rules
+## :material-scale-balance: Normalization Rules
 
 All factor values produced by `Normalize` must satisfy:
 
-1. **Range `[0, 1]`**: Values below 0 or above 1 will be clamped by the model, but your normalizer should not produce out-of-range values.
-2. **Monotonic direction**: Higher values must represent higher risk. Never invert a scale inside a normalizer.
-3. **Meaningful scale**: Avoid binary 0/1 for continuous inputs. Use a logarithmic or linear mapping that reflects the actual risk gradient.
-4. **No floating point surprises**: Avoid division by zero. Test edge cases (0, maximum value, boundary values).
+1. **Range `[0, 1]`** — Values below 0 or above 1 will be clamped by the model, but your normalizer should not produce out-of-range values.
+2. **Monotonic direction** — Higher values must represent higher risk. Never invert a scale inside a normalizer.
+3. **Meaningful scale** — Avoid binary 0/1 for continuous inputs. Use a logarithmic or linear mapping that reflects the actual risk gradient.
+4. **No floating point surprises** — Avoid division by zero. Test edge cases (0, maximum value, boundary values).
 
-**Good normalization examples:**
+??? example "Good normalization examples"
 
-- CVSS base score (0–10): `score / 10.0` - linear, simple, meaningful
-- EPSS probability (0–1): pass-through - already normalized
-- System count (0–∞): `log10(max(systems, 1)) / log10(1000)` - logarithmic cap at 1000 systems
-- Patch age in days (0–∞): `min(days / 90.0, 1.0)` - linear, capped at 90 days fully stale
+    | Input | Range | Normalization | Rationale |
+    |:------|:------|:--------------|:----------|
+    | CVSS base score | 0 - 10 | `score / 10.0` | Linear, simple, meaningful |
+    | EPSS probability | 0 - 1 | Pass-through | Already normalized |
+    | System count | 0 - inf | `log10(max(systems, 1)) / log10(1000)` | Logarithmic cap at 1000 systems |
+    | Patch age (days) | 0 - inf | `min(days / 90.0, 1.0)` | Linear, capped at 90 days fully stale |
 
 ---
 
-## Testing Requirements
+## :material-test-tube: Testing Requirements
 
 Every signal parser must have a test file `pkg/signals/parsers/<name>_test.go` using table-driven tests.
 
-Required test coverage:
+### Required coverage
 
-1. **`Validate` - valid inputs**: At least one test per valid input combination
-2. **`Validate` - invalid inputs**: At least one test per error path (wrong type, out of range, missing required fields)
-3. **`Normalize` - correct factor values**: Verify the output map contains the expected keys and values
-4. **`Normalize` - edge cases**: Zero values, maximum values, single-field inputs
-5. **`Name`, `Description`, `Fields`**: Verify these return non-empty values
+- [x] **`Validate` — valid inputs**: At least one test per valid input combination
+- [x] **`Validate` — invalid inputs**: At least one test per error path (wrong type, out of range, missing required fields)
+- [x] **`Normalize` — correct factor values**: Verify the output map contains expected keys and values
+- [x] **`Normalize` — edge cases**: Zero values, maximum values, single-field inputs
+- [x] **`Name`, `Description`, `Fields`**: Verify these return non-empty values
 
-Example test structure:
+### Example test structure
 
 ```go
 package parsers_test
@@ -288,23 +316,22 @@ func TestMySignal_Normalize(t *testing.T) {
 }
 ```
 
-Run tests before submitting:
+Run before submitting:
 
 ```bash
-task test
-task lint
+task test && task lint
 ```
 
 ---
 
-## Pull Request Checklist
+## :material-clipboard-check: Pull Request Checklist
 
-Before opening a PR for a new signal type:
+Before opening a PR for a new signal type, verify every item:
 
 - [ ] `pkg/signals/parsers/<name>.go` implements all five `Signal` methods
 - [ ] `pkg/signals/parsers/<name>_test.go` provides table-driven tests with 100% line coverage
 - [ ] Signal is registered in `pkg/signals/parsers/register.go`
-- [ ] Factor keys are either reusing existing names or added to `pkg/model/model.go` and `pkg/model/coverage.go`
+- [ ] Factor keys either reuse existing names or are added to `pkg/model/model.go` and `pkg/model/coverage.go`
 - [ ] `task test` passes with no race conditions
 - [ ] `task lint` passes with no new findings
 - [ ] Signal is documented with name, description, fields, normalization rules, and an example YAML in `docs/concepts/signals.md`
