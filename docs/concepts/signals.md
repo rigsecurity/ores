@@ -203,7 +203,7 @@ signals:
 
 ## `blast_radius`
 
-The `blast_radius` signal estimates the potential scope of a successful exploit — how many systems could be affected and whether lateral movement is possible.
+The `blast_radius` signal estimates the potential scope of a successful exploit - how many systems could be affected and whether lateral movement is possible.
 
 **Fields:**
 
@@ -230,7 +230,7 @@ signals:
 
 ## `patch`
 
-The `patch` signal describes the remediation posture for the vulnerability — whether a fix exists, how long it has been available, and whether any compensating controls are in place.
+The `patch` signal describes the remediation posture for the vulnerability - whether a fix exists, how long it has been available, and whether any compensating controls are in place.
 
 **Fields:**
 

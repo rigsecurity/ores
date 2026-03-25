@@ -263,8 +263,8 @@ for i := 0; i < 100; i++ {
 
 `Evaluate` returns a non-nil error in two cases:
 
-1. **Invalid request envelope** — `apiVersion` missing, wrong `kind`, no signals provided
-2. **No valid signals** — All provided signals were either unknown or had invalid field values
+1. **Invalid request envelope** - `apiVersion` missing, wrong `kind`, no signals provided
+2. **No valid signals** - All provided signals were either unknown or had invalid field values
 
 When one or more signals are invalid but others succeed, the engine uses the valid ones and records warnings in `result.Explanation.Warnings`. Check this slice in production code to detect degraded input quality.
 

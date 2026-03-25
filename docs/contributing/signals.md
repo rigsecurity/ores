@@ -181,7 +181,7 @@ func RegisterAll(r *signals.Registry) {
 
 If your signal introduces new factor keys, they need to be wired into the scoring model in `pkg/model/model.go` (dimension scoring functions) and `pkg/model/coverage.go` (confidence calculation).
 
-If your signal contributes to an existing dimension, add its factor keys to the appropriate `dimDefinition.score` function. If it represents a genuinely new dimension of risk, discuss this in your issue before implementing — new dimensions require a model version bump.
+If your signal contributes to an existing dimension, add its factor keys to the appropriate `dimDefinition.score` function. If it represents a genuinely new dimension of risk, discuss this in your issue before implementing - new dimensions require a model version bump.
 
 ---
 
@@ -196,10 +196,10 @@ All factor values produced by `Normalize` must satisfy:
 
 **Good normalization examples:**
 
-- CVSS base score (0–10): `score / 10.0` — linear, simple, meaningful
-- EPSS probability (0–1): pass-through — already normalized
-- System count (0–∞): `log10(max(systems, 1)) / log10(1000)` — logarithmic cap at 1000 systems
-- Patch age in days (0–∞): `min(days / 90.0, 1.0)` — linear, capped at 90 days fully stale
+- CVSS base score (0–10): `score / 10.0` - linear, simple, meaningful
+- EPSS probability (0–1): pass-through - already normalized
+- System count (0–∞): `log10(max(systems, 1)) / log10(1000)` - logarithmic cap at 1000 systems
+- Patch age in days (0–∞): `min(days / 90.0, 1.0)` - linear, capped at 90 days fully stale
 
 ---
 
@@ -209,10 +209,10 @@ Every signal parser must have a test file `pkg/signals/parsers/<name>_test.go` u
 
 Required test coverage:
 
-1. **`Validate` — valid inputs**: At least one test per valid input combination
-2. **`Validate` — invalid inputs**: At least one test per error path (wrong type, out of range, missing required fields)
-3. **`Normalize` — correct factor values**: Verify the output map contains the expected keys and values
-4. **`Normalize` — edge cases**: Zero values, maximum values, single-field inputs
+1. **`Validate` - valid inputs**: At least one test per valid input combination
+2. **`Validate` - invalid inputs**: At least one test per error path (wrong type, out of range, missing required fields)
+3. **`Normalize` - correct factor values**: Verify the output map contains the expected keys and values
+4. **`Normalize` - edge cases**: Zero values, maximum values, single-field inputs
 5. **`Name`, `Description`, `Fields`**: Verify these return non-empty values
 
 Example test structure:

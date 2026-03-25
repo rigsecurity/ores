@@ -30,7 +30,7 @@ ORES decomposes risk into five dimensions. Each dimension is computed independen
 
 The base vulnerability dimension reflects how severe a flaw is according to established vulnerability scoring standards. A remotely exploitable, authentication-free, complete-system-compromise vulnerability scores at the top of this dimension. A locally-exploitable, low-impact issue with complex attack requirements scores at the bottom.
 
-When you provide a CVSS base score, it is the primary driver of this dimension. The NIST severity label serves as a supplementary source — useful when only a qualitative classification is available, or to cross-validate a CVSS score from a different database.
+When you provide a CVSS base score, it is the primary driver of this dimension. The NIST severity label serves as a supplementary source - useful when only a qualitative classification is available, or to cross-validate a CVSS score from a different database.
 
 ### 2. Exploitability
 
@@ -44,7 +44,7 @@ EPSS probability is the primary continuous driver. Confirmed active exploitation
 
 ### 3. Environmental Context
 
-**What it captures:** The risk contributed by your specific environment — who is exposed and what they protect.
+**What it captures:** The risk contributed by your specific environment - who is exposed and what they protect.
 
 **Signals that feed it:** `asset`, `blast_radius`
 
@@ -60,7 +60,7 @@ This dimension scales the base risk by asset criticality, network exposure, data
 
 A vulnerability with an available patch that has been sitting undeployed for 90 days poses substantially more risk than one where no patch is yet available (and the team is unaware). This dimension captures that gap.
 
-Patch staleness (days since the patch was released vs. whether it has been applied) is the primary driver. The presence of compensating controls reduces this dimension's contribution. Compliance scope and regulatory impact add to it — a vulnerability on a PCI-DSS in-scope system with no patch strategy carries regulatory consequence beyond the technical risk.
+Patch staleness (days since the patch was released vs. whether it has been applied) is the primary driver. The presence of compensating controls reduces this dimension's contribution. Compliance scope and regulatory impact add to it - a vulnerability on a PCI-DSS in-scope system with no patch strategy carries regulatory consequence beyond the technical risk.
 
 ### 5. Lateral Risk
 
@@ -147,9 +147,9 @@ ORES is fully deterministic: identical inputs always produce identical outputs.
 
 This is guaranteed by:
 
-1. **Signal processing order** — Signals are sorted alphabetically by name before processing. Map iteration order in Go is non-deterministic; ORES eliminates this by sorting.
-2. **No timestamps or randomness** — The engine has no clock reads, random state, or external data fetches. It is a pure function of its inputs.
-3. **Stable integer rounding** — The largest-remainder method is deterministic for a given set of dimension scores, eliminating floating-point rounding ambiguity in the factor breakdown.
-4. **Versioned model** — The scoring model is versioned (`model.version` in every result). A given model version will always score a given input the same way, even across ORES upgrades.
+1. **Signal processing order** - Signals are sorted alphabetically by name before processing. Map iteration order in Go is non-deterministic; ORES eliminates this by sorting.
+2. **No timestamps or randomness** - The engine has no clock reads, random state, or external data fetches. It is a pure function of its inputs.
+3. **Stable integer rounding** - The largest-remainder method is deterministic for a given set of dimension scores, eliminating floating-point rounding ambiguity in the factor breakdown.
+4. **Versioned model** - The scoring model is versioned (`model.version` in every result). A given model version will always score a given input the same way, even across ORES upgrades.
 
 This makes ORES suitable for audit logs, diff-based alerting ("the score changed from 72 to 91"), and compliance workflows where score reproducibility is required.

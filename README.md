@@ -1,94 +1,195 @@
-# ORES
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo-light.svg">
+    <img alt="ORES" src=".github/assets/logo-dark.svg" width="280">
+  </picture>
+</p>
 
-**Open Risk Evaluation & Scoring — A universal, open-source engine to standardize cybersecurity risk scoring**
+<p align="center">
+  <strong>Open Risk Evaluation & Scoring</strong><br>
+  <em>Because "it depends" is not a risk score.</em>
+</p>
 
-[![Go version](https://img.shields.io/badge/go-1.25-blue)](https://go.dev/dl/)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
-[![CI](https://github.com/rigsecurity/ores/actions/workflows/ci.yml/badge.svg)](https://github.com/rigsecurity/ores/actions)
+<p align="center">
+  <a href="https://github.com/rigsecurity/ores/actions/workflows/ci.yml"><img src="https://github.com/rigsecurity/ores/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://goreportcard.com/report/github.com/rigsecurity/ores"><img src="https://goreportcard.com/badge/github.com/rigsecurity/ores" alt="Go Report Card"></a>
+  <a href="https://pkg.go.dev/github.com/rigsecurity/ores"><img src="https://pkg.go.dev/badge/github.com/rigsecurity/ores.svg" alt="Go Reference"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
+  <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/go-%3E%3D1.25-00ADD8.svg" alt="Go Version"></a>
+</p>
 
-## Why ORES
+---
 
-Cybersecurity teams today juggle a patchwork of scoring standards — CVSS, EPSS, KEV, vendor severity, asset criticality — each living in a different tool with no common language. The result is alert fatigue, inconsistent prioritization, and risk decisions made on incomplete data.
+Every vendor scores risk differently. Every tool speaks a different language. Your SIEM says "critical," your scanner says "high," your CMDB says "meh," and your CISO says **"just tell me what to fix first."**
 
-ORES solves this by providing a single, deterministic pipeline that ingests any combination of signals, normalizes them to a common scale, produces an auditable composite score, and generates a plain-language explanation of every factor that contributed to the result. Because the engine is fully deterministic, the same inputs always produce the same score — making ORES suitable for automated pipelines, audit logs, and compliance workflows.
+ORES is the answer. One engine. One score. Every signal. No opinions - just math.
+
+Think of it as the **credit score for cybersecurity risk**. You wouldn't trust a bank that invented its own credit scoring - so why trust a security stack where every tool grades on a different curve?
+
+## The Pitch
+
+```
+                    ┌─────────────┐
+  CVSS 9.8 ───────▶│             │
+  EPSS 0.95 ──────▶│             │
+  KEV: true ──────▶│    ORES     │──────▶ Score: 89 (High)
+  Asset: crown ───▶│   Engine    │──────▶ Confidence: 1.0
+  Blast: 142 ─────▶│             │──────▶ "Here's exactly why."
+  Patch: 45d ─────▶│             │
+                    └─────────────┘
+
+  Feed it what you have. More signals = more confidence.
+  Same input = same score. Always. Everywhere. Fight me.
+```
 
 ## Quick Start
 
-### Install the CLI
-
+**Install:**
 ```bash
 go install github.com/rigsecurity/ores/cmd/ores@latest
 ```
 
-### Run an evaluation
+**Score something:**
+```bash
+echo '{
+  "apiVersion": "ores.dev/v1",
+  "kind": "EvaluationRequest",
+  "signals": {
+    "cvss":         {"base_score": 9.8},
+    "epss":         {"probability": 0.95, "percentile": 0.99},
+    "threat_intel": {"actively_exploited": true, "ransomware_associated": true},
+    "asset":        {"criticality": "crown_jewel", "network_exposure": true},
+    "blast_radius": {"affected_systems": 142, "lateral_movement_possible": true}
+  }
+}' | ores evaluate -o json
+```
 
-Create a signal input file:
+**Get a score, get an explanation, get on with your life.**
+
+## How It Works
+
+ORES doesn't care where your data comes from. It accepts **8 signal types** (and counting), normalizes them to a common scale, runs them through a fixed scoring model, and tells you exactly what drove the result.
+
+| Signal | What It Captures | Example |
+|--------|-----------------|---------|
+| `cvss` | Vulnerability severity | `base_score: 9.8` |
+| `epss` | Exploit probability | `probability: 0.95` |
+| `nist` | NVD severity + CWE | `severity: "critical"` |
+| `threat_intel` | Active exploitation | `actively_exploited: true` |
+| `asset` | Asset criticality | `criticality: "crown_jewel"` |
+| `blast_radius` | Impact scope | `affected_systems: 142` |
+| `compliance` | Regulatory impact | `frameworks_affected: ["pci_dss"]` |
+| `patch` | Remediation status | `patch_available: true, patch_age_days: 45` |
+
+> **Don't have all 8?** That's fine. ORES gracefully degrades - two signals get you a score with lower confidence, eight signals get you the full picture. No signal is required. The engine scores what it gets.
+
+## The Score
 
 ```json
 {
-  "target": {
-    "id": "CVE-2024-12345",
-    "asset_criticality": "high"
-  },
-  "signals": {
-    "cvss_string": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-    "epss_score": 0.91,
-    "epss_percentile": 0.98,
-    "kev": true,
-    "exploit_maturity": "weaponized"
+  "score": 89,
+  "label": "high",
+  "explanation": {
+    "confidence": 1.0,
+    "factors": [
+      {"factor": "base_vulnerability",    "contribution": 27, "reasoning": "..."},
+      {"factor": "exploitability",         "contribution": 25, "reasoning": "..."},
+      {"factor": "environmental_context",  "contribution": 21, "reasoning": "..."},
+      {"factor": "remediation_gap",        "contribution": 10, "reasoning": "..."},
+      {"factor": "lateral_risk",           "contribution":  6, "reasoning": "..."}
+    ]
   }
 }
 ```
 
-```bash
-ores evaluate --input signals.json --explain
-```
+Every point is accounted for. Factor contributions **always sum to the total score**. No hand-waving. No black boxes. Your auditors will love you. (Your auditors will still not be fun at parties, but that's not our problem.)
 
-Example output:
+## Three Ways to Deploy
 
-```
-Score:    94.3 / 100  (CRITICAL)
-Factors:
-  cvss_base        +42.0   AV:N/AC:L/PR:N — network-reachable, no auth required
-  epss             +28.0   91st percentile — high empirical exploit probability
-  kev              +15.0   confirmed exploited in the wild
-  exploit_maturity  +9.0   weaponized exploit publicly available
-  asset_criticality +0.3   high-criticality asset multiplier applied
-```
+| Mode | Binary | For When You... |
+|------|--------|-----------------|
+| **CLI** | `ores` | Just want to score something from the terminal. Like `curl` but for risk. |
+| **Daemon** | `oresd` | Need a central scoring service. HTTP + gRPC via ConnectRPC. Health checks included because we're not savages. |
+| **WASM** | `ores.wasm` | Want to embed scoring in browsers, edge runtimes, or that one microservice written in Rust that nobody wants to touch. |
 
-## Architecture
+All three use the **exact same engine**. Same input, same score, whether you're running `ores evaluate` on your laptop or calling the daemon from a Kubernetes pod in `us-east-1`.
 
-### Pipeline
+## Why Not Just Use CVSS?
 
-ORES processes risk signals through a four-step pipeline:
+| | The Status Quo | ORES |
+|---|---|---|
+| **Inputs** | One framework at a time | All signals, together |
+| **Consistency** | "It depends on the vendor" | Deterministic. Always. |
+| **Explainability** | A number and a prayer | Factor-by-factor breakdown |
+| **Context** | Vulnerability in a vacuum | Asset, blast radius, remediation, compliance |
+| **Confidence** | "Trust us" | Mathematically derived from signal coverage |
+| **Deployment** | Vendor lock-in | CLI, daemon, WASM - your choice |
 
-1. **Ingest** — Accept signals in any supported format (JSON, protobuf, WASI memory). Each signal is parsed by a typed handler that validates and normalizes the raw value.
-2. **Normalize** — Map every signal to a common `[0, 1]` scale using per-signal normalization functions. This ensures signals from different frameworks (e.g., CVSS base score vs. EPSS probability) are directly comparable.
-3. **Score** — Apply a weighted composite model to produce a final score in `[0, 100]`. Weights are configurable; the default model reflects empirical exploit likelihood.
-4. **Explain** — Emit a structured explanation listing each signal's contribution in absolute and relative terms, suitable for display in dashboards, audit logs, or API responses.
+## For the Skeptics
 
-### Deployment Modes
+**"Isn't this just another scoring framework?"**
+No. Frameworks let everyone invent their own weights. That's the problem. ORES ships **one model** - deterministic, versioned, and the same everywhere. You can't customize the weights because that would defeat the entire purpose.
 
-| Mode | Binary | Use case |
-|------|--------|----------|
-| **CLI** | `ores` | One-shot evaluations from the terminal, scripts, and CI pipelines |
-| **Daemon** | `oresd` | Long-running gRPC/HTTP service for integration with SIEM, SOAR, and ticketing systems |
-| **WASM** | `ores.wasm` | Embed the scoring engine directly in browsers, edge runtimes, or language runtimes via WASI |
+**"What if I disagree with the score?"**
+Great. Look at the factor breakdown, find the signal that's wrong, fix your data. The score is a function of the input, not our opinion.
 
-All three modes share the same core engine (`pkg/engine`) and produce bit-identical scores for identical inputs.
+**"What about my proprietary risk model?"**
+Keep it. Use ORES as a universal baseline for cross-tool comparison. Your model is for your decisions; ORES is for speaking a common language.
 
-## Documentation
+## Project Status
 
-Full documentation is available at https://rigsecurity.github.io/ores (coming soon).
+ORES is in **preview** (`v0.1.0-preview`). The architecture is production-ready; the scoring model weights are being refined through [ML simulation research](https://github.com/rigsecurity/ml-playground/pull/4). The API surface is stable. The model will evolve - that's what semantic versioning is for.
+
+**What's here today:**
+- Core engine with 8 signal types
+- CLI, daemon (ConnectRPC), and WASM module
+- Full test suite with race detector
+- CI/CD with GoReleaser, multi-platform releases, Cosign signing
+- [Complete documentation](https://rigsecurity.github.io/ores/)
+
+**What's next:**
+- Finalized scoring weights from ML research
+- Additional signal types (KEV, CISA advisories, cloud posture)
+- Language SDKs (Python, TypeScript, Rust)
+- Standard body engagement
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding standards, and the pull request process.
+We'd love your help. Whether it's a new signal parser, a bug fix, or telling us our scoring model is wrong (with math, please) - see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+**First time?** Look for issues labeled [`good-first-issue`](https://github.com/rigsecurity/ores/labels/good-first-issue).
 
 ## Security
 
-To report a security vulnerability, see [SECURITY.md](SECURITY.md). Do not open a public GitHub issue for security reports.
+Found something? Please don't open a public issue. See [SECURITY.md](SECURITY.md) for responsible disclosure.
+
+## Credits
+
+ORES was born out of the research and vision of the Rig Security team.
+
+**Core Team**
+
+- **Hila Paz Herszfang** - Research & scoring model design
+- **Lior Ben Dayan** - Architecture & engineering
+- **Michal Haikov** - Signal design & validation
+- **Nokky Goren** - Project lead & open-source strategy
+
+**Community Contributors**
+
+<!-- Add yourself here! We'd love to see your name. Format: -->
+<!-- - **Your Name** - What you contributed -->
+
+Want to see your name here? Check out [CONTRIBUTING.md](CONTRIBUTING.md) and send a PR.
 
 ## License
 
-Copyright 2026 Rig Security. Licensed under the [Apache License, Version 2.0](LICENSE).
+Apache 2.0 - because security infrastructure should be open.
+
+Copyright 2026 [Rig Security](https://www.rig.security/).
+
+---
+
+<p align="center">
+  <em>Built by <a href="https://www.rig.security/">Rig Security</a> - because the industry deserves a standard, not another vendor score.</em>
+</p>

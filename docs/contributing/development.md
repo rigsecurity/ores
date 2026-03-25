@@ -40,7 +40,7 @@ brew install bufbuild/buf/buf
 go install github.com/bufbuild/buf/cmd/buf@latest
 ```
 
-golangci-lint is bundled as a `go tool` in `go.mod` — you do not need to install it separately.
+golangci-lint is bundled as a `go tool` in `go.mod` - you do not need to install it separately.
 
 ---
 
@@ -133,7 +133,7 @@ ores/
 ### Package responsibilities
 
 **`pkg/score`**
-Defines the core types: `EvaluationRequest`, `EvaluationResult`, `Explanation`, `Factor`, `Label`, and the `LabelForScore` function. This package has no dependencies on other ORES packages — it is the shared type language.
+Defines the core types: `EvaluationRequest`, `EvaluationResult`, `Explanation`, `Factor`, `Label`, and the `LabelForScore` function. This package has no dependencies on other ORES packages - it is the shared type language.
 
 **`pkg/signals`**
 Defines the `Signal` interface, the `NormalizedSignal` type (a `map[string]float64`), and the `Registry` that maps signal names to their implementations. Does not contain any specific signal parsers.

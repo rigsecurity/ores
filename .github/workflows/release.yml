@@ -4,6 +4,12 @@ on:
   push:
     tags: ["v*"]
 
+# SECURITY: This repo is public. Release workflow runs on GitHub-hosted runners only.
+# - contents:write is needed for GoReleaser to create GitHub releases
+# - packages:write is needed for pushing container images to ghcr.io
+# - id-token:write is needed for Cosign keyless signing (OIDC)
+# No org-level secrets are referenced. Only the auto-scoped GITHUB_TOKEN is used.
+
 permissions:
   contents: write
   packages: write
@@ -12,6 +18,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Only run on tags pushed to the default branch
+    if: github.repository == 'rigsecurity/ores'
     steps:
       - uses: actions/checkout@v4
         with:

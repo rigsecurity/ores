@@ -1,10 +1,10 @@
-# ORES — Open Risk Evaluation & Scoring
+# ORES - Open Risk Evaluation & Scoring
 
 **A universal, open-source engine to standardize cybersecurity risk scoring.**
 
 ---
 
-Cybersecurity teams today juggle a patchwork of scoring standards — CVSS, EPSS, KEV, vendor severity, asset criticality — each living in a different tool with no common language. The result is alert fatigue, inconsistent prioritization, and risk decisions made on incomplete data.
+Cybersecurity teams today juggle a patchwork of scoring standards - CVSS, EPSS, KEV, vendor severity, asset criticality - each living in a different tool with no common language. The result is alert fatigue, inconsistent prioritization, and risk decisions made on incomplete data.
 
 ORES solves this by providing a single, deterministic pipeline that ingests any combination of signals, normalizes them to a common scale, produces an auditable composite score, and generates a plain-language explanation of every factor that contributed to the result.
 
@@ -14,7 +14,7 @@ ORES solves this by providing a single, deterministic pipeline that ingests any 
 : The same inputs always produce the same score. ORES is suitable for automated pipelines, audit logs, and compliance workflows where reproducibility is a hard requirement.
 
 **Universal**
-: ORES accepts signals from any source — CVSS strings, EPSS probabilities, threat intelligence feeds, asset inventories, patch management systems, and compliance frameworks — through a single, typed signal interface.
+: ORES accepts signals from any source - CVSS strings, EPSS probabilities, threat intelligence feeds, asset inventories, patch management systems, and compliance frameworks - through a single, typed signal interface.
 
 **Explainable**
 : Every score comes with a structured breakdown of each contributing dimension. You can trace exactly which signals drove the result and by how much.
@@ -80,10 +80,10 @@ lateral_risk            10            Lateral movement potential based on blast 
 
 ORES processes risk signals through a four-step pipeline:
 
-1. **Ingest** — Accept signals in any supported format (JSON, YAML, protobuf). Each signal is parsed by a typed handler that validates and normalizes the raw value.
-2. **Normalize** — Map every signal to a common `[0, 1]` scale using per-signal normalization functions. This ensures signals from different frameworks are directly comparable.
-3. **Score** — Apply a weighted composite model across five dimensions to produce a final score in `[0, 100]`.
-4. **Explain** — Emit a structured explanation listing each dimension's contribution in absolute terms, along with which signals drove each factor.
+1. **Ingest** - Accept signals in any supported format (JSON, YAML, protobuf). Each signal is parsed by a typed handler that validates and normalizes the raw value.
+2. **Normalize** - Map every signal to a common `[0, 1]` scale using per-signal normalization functions. This ensures signals from different frameworks are directly comparable.
+3. **Score** - Apply a weighted composite model across five dimensions to produce a final score in `[0, 100]`.
+4. **Explain** - Emit a structured explanation listing each dimension's contribution in absolute terms, along with which signals drove each factor.
 
 ## Deployment Modes
 
@@ -97,7 +97,7 @@ All three modes share the same core engine and produce bit-identical scores for 
 
 ## Get Started
 
-- [Install ORES](getting-started/installation.md) — Install the CLI, daemon, or WASM module
-- [Quickstart](getting-started/quickstart.md) — Score your first vulnerability in 60 seconds
-- [Signals Reference](concepts/signals.md) — See every supported signal type and its fields
-- [How Scoring Works](concepts/scoring.md) — Understand the five scoring dimensions
+- [Install ORES](getting-started/installation.md) - Install the CLI, daemon, or WASM module
+- [Quickstart](getting-started/quickstart.md) - Score your first vulnerability in 60 seconds
+- [Signals Reference](concepts/signals.md) - See every supported signal type and its fields
+- [How Scoring Works](concepts/scoring.md) - Understand the five scoring dimensions

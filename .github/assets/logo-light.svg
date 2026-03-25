@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- Calculator icon - minimal outline -->
+  <g transform="translate(16, 12)">
+    <rect x="0" y="0" width="38" height="52" rx="6" fill="none" stroke="#11B897" stroke-width="2"/>
+    <rect x="6" y="6" width="26" height="12" rx="2" fill="#11B897" opacity="0.12"/>
+    <text x="19" y="16" font-family="monospace" font-size="10" font-weight="700" fill="#11B897" text-anchor="middle">89</text>
+    <circle cx="11" cy="28" r="2.5" fill="#11B897" opacity="0.5"/>
+    <circle cx="19" cy="28" r="2.5" fill="#746BE9" opacity="0.5"/>
+    <circle cx="27" cy="28" r="2.5" fill="#11B897" opacity="0.3"/>
+    <circle cx="11" cy="36" r="2.5" fill="#746BE9" opacity="0.3"/>
+    <circle cx="19" cy="36" r="2.5" fill="#11B897" opacity="0.3"/>
+    <circle cx="27" cy="36" r="2.5" fill="#746BE9" opacity="0.5"/>
+    <circle cx="11" cy="44" r="2.5" fill="#11B897" opacity="0.3"/>
+    <circle cx="19" cy="44" r="2.5" fill="#746BE9" opacity="0.3"/>
+    <circle cx="27" cy="44" r="2.5" fill="#11B897" opacity="0.5"/>
+  </g>
+
+  <!-- ORES text -->
+  <text x="72" y="52" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="46" font-weight="800" letter-spacing="-1.5" fill="#0A0A0F">ORES</text>
+</svg>

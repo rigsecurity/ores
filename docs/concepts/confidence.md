@@ -6,7 +6,7 @@ Every `EvaluationResult` includes a `confidence` value in `[0.0, 1.0]`. Confiden
 
 ## What Confidence Means
 
-ORES can always produce a score, even when only a single signal is provided. Missing signals fall back to neutral defaults — values chosen to represent "no information" for that dimension. The `confidence` value quantifies how reliable that score is.
+ORES can always produce a score, even when only a single signal is provided. Missing signals fall back to neutral defaults - values chosen to represent "no information" for that dimension. The `confidence` value quantifies how reliable that score is.
 
 A confidence of `1.0` means every scoring dimension was covered by at least one signal you provided. A confidence of `0.0` would mean no signals were recognized. In practice, providing a CVSS score alone yields a confidence around `0.30` because only the `base_vulnerability` dimension is covered.
 
@@ -51,14 +51,14 @@ For each dimension, the coverage fraction is `(sources covered) / (total sources
 
 Add signals for the uncovered dimensions. The most impactful additions (sorted by weight contribution):
 
-1. **Add `cvss` or `nist`** if not already present — covers `base_vulnerability` (+30%)
-2. **Add `epss` and/or `threat_intel`** — covers `exploitability` (+25%)
-3. **Add `asset`** — covers `environmental_context` (+10% to +20%)
-4. **Add `blast_radius`** — covers `environmental_context` and `lateral_risk` (+10% to +30%)
-5. **Add `patch`** — covers `remediation_gap` (+7.5% to +15%)
-6. **Add `compliance`** — covers `remediation_gap` (+7.5% to +15%)
+1. **Add `cvss` or `nist`** if not already present - covers `base_vulnerability` (+30%)
+2. **Add `epss` and/or `threat_intel`** - covers `exploitability` (+25%)
+3. **Add `asset`** - covers `environmental_context` (+10% to +20%)
+4. **Add `blast_radius`** - covers `environmental_context` and `lateral_risk` (+10% to +30%)
+5. **Add `patch`** - covers `remediation_gap` (+7.5% to +15%)
+6. **Add `compliance`** - covers `remediation_gap` (+7.5% to +15%)
 
-The explanation in every result includes `derived_from` lists for each factor. Any factor showing `"derived_from": ["defaults"]` indicates an uncovered dimension — adding the corresponding signal type will improve both coverage and score accuracy.
+The explanation in every result includes `derived_from` lists for each factor. Any factor showing `"derived_from": ["defaults"]` indicates an uncovered dimension - adding the corresponding signal type will improve both coverage and score accuracy.
 
 ---
 
@@ -87,9 +87,9 @@ Confidence is returned in the `explanation` field of every result:
 
 The `signals_provided`, `signals_used`, and `signals_unknown` fields give you an additional view into input quality:
 
-- `signals_provided` — Total number of signal keys in the request
-- `signals_used` — Signals that were recognized and successfully normalized
-- `signals_unknown` — Signals that were not recognized (typos, unsupported types); these are also listed in `unknown_signals`
+- `signals_provided` - Total number of signal keys in the request
+- `signals_used` - Signals that were recognized and successfully normalized
+- `signals_unknown` - Signals that were not recognized (typos, unsupported types); these are also listed in `unknown_signals`
 
 A request where `signals_used < signals_provided` means some signals were either unknown or invalid. Check the `warnings` array for details.
 
@@ -97,7 +97,7 @@ A request where `signals_used < signals_provided` means some signals were either
 
 ## Confidence Is Not a Score Quality Penalty
 
-Confidence is a metadata field, not a penalty applied to the score. The score itself already reflects defaults for uncovered dimensions. Confidence is there to tell you — and your downstream systems — how much of the score is based on real data.
+Confidence is a metadata field, not a penalty applied to the score. The score itself already reflects defaults for uncovered dimensions. Confidence is there to tell you - and your downstream systems - how much of the score is based on real data.
 
 For automated workflows, you might choose to:
 
