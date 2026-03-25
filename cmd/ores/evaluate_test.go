@@ -284,3 +284,57 @@ signals:
 	assert.GreaterOrEqual(t, result.Score, 0)
 	assert.LessOrEqual(t, result.Score, 100)
 }
+
+func TestRunEvaluateB4FromFile(t *testing.T) {
+	input := map[string]any{
+		"apiVersion": score.APIVersion,
+		"kind":       score.KindEvaluationRequest,
+		"findings":   []any{9.8, 7.5, 4.2},
+		"signals": map[string]any{
+			"asset": map[string]any{"criticality": "high"},
+		},
+	}
+
+	data, err := json.Marshal(input)
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "findings.json")
+	require.NoError(t, os.WriteFile(path, data, 0o600))
+
+	var buf bytes.Buffer
+	err = runEvaluate(path, "json", &buf)
+	require.NoError(t, err)
+
+	var result score.EvaluationResult
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &result))
+
+	assert.Equal(t, "b4", result.Mode)
+	assert.GreaterOrEqual(t, result.Score, 0)
+	assert.LessOrEqual(t, result.Score, 100)
+}
+
+func TestRunEvaluateB4TableOutput(t *testing.T) {
+	input := map[string]any{
+		"apiVersion": score.APIVersion,
+		"kind":       score.KindEvaluationRequest,
+		"findings":   []any{9.8, 7.5},
+	}
+
+	data, err := json.Marshal(input)
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "findings.json")
+	require.NoError(t, os.WriteFile(path, data, 0o600))
+
+	var buf bytes.Buffer
+	err = runEvaluate(path, "table", &buf)
+	require.NoError(t, err)
+
+	out := buf.String()
+	assert.Contains(t, out, "Score:")
+	assert.Contains(t, out, "Mode:")
+	assert.Contains(t, out, "b4")
+	assert.Contains(t, out, "Findings:")
+}
