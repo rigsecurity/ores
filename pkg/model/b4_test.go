@@ -75,15 +75,15 @@ func TestB4CapAtMaxFinding(t *testing.T) {
 func TestB4ClampAtZero(t *testing.T) {
 	m := model.New()
 	allZero := map[string]float64{
-		"asset_criticality":    0,
-		"network_exposure":     0,
-		"data_sensitivity":     0,
-		"blast_scope":          0,
-		"lateral_movement":     0,
+		"asset_criticality":     0,
+		"network_exposure":      0,
+		"data_sensitivity":      0,
+		"blast_scope":           0,
+		"lateral_movement":      0,
 		"remediation_available": 0,
-		"patch_staleness":      0,
-		"regulatory_severity":  0,
-		"compliance_scope":     0,
+		"patch_staleness":       0,
+		"regulatory_severity":   0,
+		"compliance_scope":      0,
 	}
 	result, err := m.ScoreB4([]float64{1}, allZero)
 	require.NoError(t, err)
@@ -131,13 +131,13 @@ func TestB4BlastRadiusAdjust(t *testing.T) {
 	m := model.New()
 
 	high, err := m.ScoreB4([]float64{5}, map[string]float64{
-		"blast_scope":     1,
+		"blast_scope":      1,
 		"lateral_movement": 1,
 	})
 	require.NoError(t, err)
 
 	low, err := m.ScoreB4([]float64{5}, map[string]float64{
-		"blast_scope":     0,
+		"blast_scope":      0,
 		"lateral_movement": 0,
 	})
 	require.NoError(t, err)
@@ -271,6 +271,6 @@ func TestB4FactorWeightsAreZero(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, f := range result.Factors {
-		assert.Equal(t, 0.0, f.Weight, "weight must be 0 for B4 factor %s", f.Name)
+		assert.InDelta(t, 0.0, f.Weight, 0.0001, "weight must be 0 for B4 factor %s", f.Name)
 	}
 }

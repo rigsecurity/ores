@@ -44,6 +44,7 @@ func TestEngineEvaluate(t *testing.T) {
 	assert.LessOrEqual(t, result.Score, 100)
 	assert.NotEmpty(t, string(result.Label))
 	assert.Equal(t, "0.2.0", result.Version)
+	assert.Equal(t, "weighted", result.Mode)
 	assert.Greater(t, result.Explanation.Confidence, 0.0)
 
 	// Factor contributions must sum to the total score.
@@ -166,7 +167,7 @@ func TestEngineEvaluateB4Mode(t *testing.T) {
 	assert.Equal(t, "b4", result.Mode)
 	assert.GreaterOrEqual(t, result.Score, 0)
 	assert.LessOrEqual(t, result.Score, 100)
-	assert.Greater(t, result.Explanation.FindingsCount, 0)
+	assert.Positive(t, result.Explanation.FindingsCount)
 }
 
 func TestEngineEvaluateWeightedMode(t *testing.T) {
@@ -192,7 +193,7 @@ func TestEngineEvaluateB4FindingsOnly(t *testing.T) {
 	require.NotNil(t, result)
 
 	assert.Equal(t, "b4", result.Mode)
-	assert.Equal(t, 0.0, result.Explanation.Confidence)
+	assert.InDelta(t, 0.0, result.Explanation.Confidence, 0.0001)
 }
 
 func TestEngineEvaluateB4EmptyFindingsFallsThrough(t *testing.T) {

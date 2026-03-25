@@ -26,8 +26,9 @@ func B4Params() B4Parameters {
 	}
 }
 
-// getB4 is a nil-safe map lookup with a default value.
-func getB4(factors map[string]float64, key string, defaultVal float64) float64 {
+// getB4 is a nil-safe map lookup that returns 0.5 when the key is absent or factors is nil.
+func getB4(factors map[string]float64, key string) float64 {
+	const defaultVal = 0.5
 	if factors == nil {
 		return defaultVal
 	}
@@ -42,9 +43,9 @@ func getB4(factors map[string]float64, key string, defaultVal float64) float64 {
 // computeEnvironmentalAdjust returns the environmental context adjustment in (-MaxAdjust, +MaxAdjust].
 // Missing factors default to 0.5 (neutral — no adjustment).
 func computeEnvironmentalAdjust(factors map[string]float64, p B4Parameters) float64 {
-	criticality := getB4(factors, "asset_criticality", 0.5)
-	exposure := getB4(factors, "network_exposure", 0.5)
-	sensitivity := getB4(factors, "data_sensitivity", 0.5)
+	criticality := getB4(factors, "asset_criticality")
+	exposure := getB4(factors, "network_exposure")
+	sensitivity := getB4(factors, "data_sensitivity")
 
 	raw := (criticality*0.4 + exposure*0.3 + sensitivity*0.3 - 0.5) * 4.0
 
@@ -53,8 +54,8 @@ func computeEnvironmentalAdjust(factors map[string]float64, p B4Parameters) floa
 
 // computeBlastRadiusAdjust returns the blast-radius adjustment in (-MaxAdjust, +MaxAdjust].
 func computeBlastRadiusAdjust(factors map[string]float64, p B4Parameters) float64 {
-	scope := getB4(factors, "blast_scope", 0.5)
-	lateral := getB4(factors, "lateral_movement", 0.5)
+	scope := getB4(factors, "blast_scope")
+	lateral := getB4(factors, "lateral_movement")
 
 	raw := (scope*0.5 + lateral*0.5 - 0.5) * 4.0
 
@@ -63,10 +64,10 @@ func computeBlastRadiusAdjust(factors map[string]float64, p B4Parameters) float6
 
 // computeRemediationAdjust returns the remediation-burden adjustment in (-MaxAdjust, +MaxAdjust].
 func computeRemediationAdjust(factors map[string]float64, p B4Parameters) float64 {
-	avail := getB4(factors, "remediation_available", 0.5)
-	staleness := getB4(factors, "patch_staleness", 0.5)
-	regSeverity := getB4(factors, "regulatory_severity", 0.5)
-	compScope := getB4(factors, "compliance_scope", 0.5)
+	avail := getB4(factors, "remediation_available")
+	staleness := getB4(factors, "patch_staleness")
+	regSeverity := getB4(factors, "regulatory_severity")
+	compScope := getB4(factors, "compliance_scope")
 
 	raw := (avail*0.3 + staleness*0.3 + regSeverity*0.2 + compScope*0.2 - 0.5) * 4.0
 
@@ -169,11 +170,11 @@ func (m *Model) ScoreB4(findings []float64, factors map[string]float64) (*ScoreR
 	// to finalScore×10.  When raw ≤ 0 the final score is 0 and all contributions
 	// are zero.
 	var (
-		baseFloat float64
+		baseFloat  float64
 		bonusFloat float64
-		envFloat float64
-		brFloat float64
-		remFloat float64
+		envFloat   float64
+		brFloat    float64
+		remFloat   float64
 	)
 
 	if rawScore > 0 {

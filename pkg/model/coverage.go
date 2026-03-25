@@ -58,8 +58,8 @@ func CalculateConfidence(dims []DimensionDef, provided map[string]bool) float64 
 var b4Axes = []struct {
 	signals []string
 }{
-	{signals: []string{"asset"}},              // environmental axis
-	{signals: []string{"blast_radius"}},       // blast radius axis
+	{signals: []string{"asset"}},               // environmental axis
+	{signals: []string{"blast_radius"}},        // blast radius axis
 	{signals: []string{"patch", "compliance"}}, // remediation axis
 }
 

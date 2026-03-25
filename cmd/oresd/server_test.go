@@ -233,7 +233,7 @@ func TestEvaluateHandlerB4Mode(t *testing.T) {
 	assert.Equal(t, "b4", resp.Msg.Mode)
 	assert.GreaterOrEqual(t, resp.Msg.Score, int32(0))
 	assert.LessOrEqual(t, resp.Msg.Score, int32(100))
-	assert.Greater(t, resp.Msg.Explanation.FindingsCount, int32(0))
+	assert.Positive(t, resp.Msg.Explanation.FindingsCount)
 }
 
 func TestEvaluateHandlerB4FindingsOnly(t *testing.T) {

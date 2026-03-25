@@ -106,7 +106,7 @@ func explanationToProto(e score.Explanation) *oresv1.Explanation {
 		SignalsProvided: safeInt32(e.SignalsProvided), //nolint:gosec // signal counts are small positive integers
 		SignalsUsed:     safeInt32(e.SignalsUsed),     //nolint:gosec // signal counts are small positive integers
 		SignalsUnknown:  safeInt32(e.SignalsUnknown),  //nolint:gosec // signal counts are small positive integers
-		FindingsCount:   safeInt32(e.FindingsCount),  //nolint:gosec // findings count is a small positive integer
+		FindingsCount:   safeInt32(e.FindingsCount),   //nolint:gosec // findings count is a small positive integer
 		UnknownSignals:  e.UnknownSignals,
 		Warnings:        e.Warnings,
 		Confidence:      e.Confidence,

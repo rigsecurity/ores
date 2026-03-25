@@ -15,7 +15,7 @@ func TestRunVersion(t *testing.T) {
 
 	out := buf.String()
 	assert.Contains(t, out, "ores model version")
-	assert.Contains(t, out, "0.1.0-preview")
+	assert.Contains(t, out, "0.2.0")
 }
 
 func TestVersionCommand(t *testing.T) {
@@ -26,5 +26,5 @@ func TestVersionCommand(t *testing.T) {
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	require.NoError(t, cmd.Execute())
-	assert.Contains(t, buf.String(), "0.1.0-preview")
+	assert.Contains(t, buf.String(), "0.2.0")
 }

@@ -39,7 +39,7 @@ func TestEvaluationResultJSON(t *testing.T) {
 		Kind:       score.KindEvaluationResult,
 		Score:      94,
 		Label:      score.LabelCritical,
-		Version:    "0.1.0-preview",
+		Version:    "0.2.0",
 		Explanation: score.Explanation{
 			SignalsProvided: 2,
 			SignalsUsed:     2,
@@ -191,10 +191,10 @@ func TestEvaluationResultHasMode(t *testing.T) {
 		Score:      75,
 		Label:      score.LabelHigh,
 		Mode:       "findings",
-		Version:    "0.1.0-preview",
+		Version:    "0.2.0",
 		Explanation: score.Explanation{
-			FindingsCount: 3,
-			Confidence:    0.8,
+			FindingsCount:  3,
+			Confidence:     0.8,
 			UnknownSignals: []string{},
 			Warnings:       []string{},
 			Factors:        []score.Factor{},
