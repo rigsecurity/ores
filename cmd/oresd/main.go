@@ -52,9 +52,9 @@ func main() {
 
 	// Middleware options.
 	opts := muxOptions{
-		maxBodyBytes: envInt64("ORES_MAX_BODY_BYTES", defaultMaxBodyBytes),
-		rateLimitRPS: envFloat64("ORES_RATE_LIMIT_RPS", 0),
-		rateBurst:    int(envInt64("ORES_RATE_LIMIT_BURST", 0)),
+		maxBodyBytes: envInt64("ORES_MAX_REQUEST_BYTES", defaultMaxBodyBytes),
+		rateLimitRPS: envFloat64("ORES_RATE_LIMIT", 0),
+		rateBurst:    int(envInt64("ORES_RATE_BURST", 0)),
 		tlsEnabled:   tlsEnabled,
 		corsOrigins:  parseCORSOrigins(os.Getenv("ORES_CORS_ORIGINS")),
 	}
