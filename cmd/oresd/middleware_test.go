@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/rigsecurity/ores/pkg/engine"
 )
@@ -87,9 +86,14 @@ func TestMaxBodyMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 	})
 
-	t.Run("negative limit disables check", func(t *testing.T) {
+	t.Run("negative limit still enforces", func(t *testing.T) {
+		// Negative values must not silently disable the body limit.
 		handler := maxBodyMiddleware(-1, echoBodyHandler)
-		require.IsType(t, echoBodyHandler, handler)
+		rec := httptest.NewRecorder()
+		body := strings.NewReader("any data")
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/", body))
+
+		assert.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
 	})
 }
 

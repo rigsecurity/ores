@@ -88,9 +88,9 @@ func securityHeadersMiddleware(tlsEnabled bool, next http.Handler) http.Handler 
 }
 
 // maxBodyMiddleware limits the size of incoming request bodies.
-// If limit <= 0 the check is disabled and next is returned directly.
+// If limit is 0 the check is disabled and next is returned directly.
 func maxBodyMiddleware(limit int64, next http.Handler) http.Handler {
-	if limit <= 0 {
+	if limit == 0 {
 		return next
 	}
 
