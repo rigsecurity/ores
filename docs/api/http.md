@@ -1,6 +1,6 @@
 # HTTP API Reference
 
-The `oresd` daemon exposes the ORES engine via [ConnectRPC](https://connectrpc.com/), which supports both ConnectRPC JSON (plain HTTP POST with `application/json`) and gRPC binary framing over HTTP/2. This page covers the ConnectRPC JSON protocol, which works with any HTTP client — `curl`, `fetch`, `requests`, and so on.
+The `oresd` daemon exposes the ORES engine via [ConnectRPC](https://connectrpc.com/), which supports both ConnectRPC JSON (plain HTTP POST with `application/json`) and gRPC binary framing over HTTP/2. This page covers the ConnectRPC JSON protocol, which works with any HTTP client - `curl`, `fetch`, `requests`, and so on.
 
 ## Base URL
 
@@ -256,7 +256,7 @@ Errors follow the ConnectRPC error format. The HTTP status code reflects the err
 | HTTP Status | Connect Code | Typical Cause |
 |-------------|--------------|---------------|
 | `400 Bad Request` | `invalid_argument` | Invalid request envelope, invalid signal values, no valid signals |
-| `405 Method Not Allowed` | — | Non-POST request to an RPC endpoint |
+| `405 Method Not Allowed` | - | Non-POST request to an RPC endpoint |
 
 Error response body:
 
@@ -267,7 +267,7 @@ Error response body:
 }
 ```
 
-**Example — missing `apiVersion`:**
+**Example - missing `apiVersion`:**
 
 ```bash
 curl -s -X POST http://localhost:8080/ores.v1.OresService/Evaluate \
@@ -282,7 +282,7 @@ curl -s -X POST http://localhost:8080/ores.v1.OresService/Evaluate \
 }
 ```
 
-**Example — unrecognized signal (warning, not error):**
+**Example - unrecognized signal (warning, not error):**
 
 Unrecognized signal names do not cause an error. They appear in `unknownSignals` and the evaluation proceeds with any valid signals:
 

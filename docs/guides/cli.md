@@ -268,7 +268,7 @@ grype --output json image:nginx:1.24 \
 ```bash
 SCORE=$(ores evaluate -f signals.json | jq .score)
 if [ "$SCORE" -ge 90 ]; then
-  echo "CRITICAL risk score: $SCORE — blocking pipeline"
+  echo "CRITICAL risk score: $SCORE - blocking pipeline"
   exit 1
 fi
 ```

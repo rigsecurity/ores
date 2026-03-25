@@ -16,7 +16,7 @@ Thank you for your interest in contributing to ORES (Open Risk Evaluation & Scor
 
 ## Code of Conduct
 
-This project is governed by the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold its standards. Violations may be reported to `security@rigsecurity.com`.
+This project is governed by the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold its standards. Violations may be reported to `conduct@rig.security`.
 
 ## Developer Certificate of Origin
 
@@ -89,7 +89,7 @@ go mod download
    git checkout -b feat/epss-signal-parser
    ```
 
-3. Make your changes. Keep commits small and focused — one logical change per commit.
+3. Make your changes. Keep commits small and focused - one logical change per commit.
 
 4. Run the full test and lint suite before pushing:
 
@@ -138,12 +138,12 @@ ORES uses [golangci-lint v2](https://golangci-lint.run/) with a strict ruleset d
 
 Key linters in use:
 
-- `staticcheck` and `govet` — correctness
-- `errcheck` and `errorlint` — proper error handling
-- `gosec` — security anti-patterns
-- `sloglint` — consistent structured logging
-- `testifylint` — proper use of the testify assertion library
-- `unparam`, `unused`, `ineffassign` — dead code elimination
+- `staticcheck` and `govet` - correctness
+- `errcheck` and `errorlint` - proper error handling
+- `gosec` - security anti-patterns
+- `sloglint` - consistent structured logging
+- `testifylint` - proper use of the testify assertion library
+- `unparam`, `unused`, `ineffassign` - dead code elimination
 
 ## Pull Request Process
 
@@ -207,7 +207,7 @@ chore(deps): update buf to v1.34.0
 
 ### Subject line rules
 
-- Use the imperative mood: "add", "fix", "remove" — not "added", "fixes", "removed"
+- Use the imperative mood: "add", "fix", "remove" - not "added", "fixes", "removed"
 - Do not capitalize the first letter
 - No period at the end
 - Maximum 72 characters including type and scope

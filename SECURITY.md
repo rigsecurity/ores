@@ -19,9 +19,9 @@ The ORES maintainers take security issues seriously. We appreciate the efforts o
 
 Send a detailed report to:
 
-**security@rigsecurity.com**
+**security@rig.security**
 
-Encrypt your message using our PGP key if you are disclosing sensitive technical details. The fingerprint is published on our website at https://rigsecurity.com/security.
+Encrypt your message using our PGP key if you are disclosing sensitive technical details. The fingerprint is published on our website at https://www.rig.security/security.
 
 ### What to Include
 
@@ -86,7 +86,7 @@ We consider security research conducted under these terms to be authorized, lawf
 
 ## Security-Sensitive Design Decisions
 
-ORES is a **deterministic scoring engine** — it does not connect to external networks at runtime. All signal data is provided by the caller. This design eliminates an entire class of supply-chain and SSRF risks that affect online scoring services.
+ORES is a **deterministic scoring engine** that does not connect to external networks at runtime. All signal data is provided by the caller. This design eliminates an entire class of supply-chain and SSRF risks that affect online scoring services.
 
 Nonetheless, several areas deserve particular attention from a security perspective:
 
@@ -96,6 +96,6 @@ Nonetheless, several areas deserve particular attention from a security perspect
 
 ## Contact
 
-Primary: security@rigsecurity.com
-Website: https://rigsecurity.com/security
+Primary: security@rig.security
+Website: https://www.rig.security/security
 GitHub Security Advisories: https://github.com/rigsecurity/ores/security/advisories

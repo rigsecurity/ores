@@ -25,6 +25,6 @@ https://www.contributor-covenant.org/version/2/1/code_of_conduct/
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers at:
 
-**conduct@rigsecurity.com**
+**conduct@rig.security**
 
 All complaints will be reviewed promptly and handled with discretion. Maintainers are obligated to maintain confidentiality with respect to the reporter of any incident.

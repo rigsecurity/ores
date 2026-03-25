@@ -73,7 +73,7 @@ message GetVersionResponse {
 }
 ```
 
-The `signals` field in `EvaluateRequest` uses `google.protobuf.Struct` — a dynamic JSON-compatible map. This allows any signal payload to be passed without a fixed schema per signal type.
+The `signals` field in `EvaluateRequest` uses `google.protobuf.Struct` - a dynamic JSON-compatible map. This allows any signal payload to be passed without a fixed schema per signal type.
 
 ---
 
@@ -105,8 +105,8 @@ buf generate
 
 Generated files land in `gen/proto/ores/v1/`. The key packages are:
 
-- `gen/proto/ores/v1` — protobuf message types
-- `gen/proto/ores/v1/oresv1connect` — ConnectRPC service stubs
+- `gen/proto/ores/v1` - protobuf message types
+- `gen/proto/ores/v1/oresv1connect` - ConnectRPC service stubs
 
 ---
 
@@ -173,7 +173,7 @@ func main() {
     fmt.Printf("Confidence: %.2f\n", msg.Explanation.Confidence)
 
     for _, f := range msg.Explanation.Factors {
-        fmt.Printf("  %-25s +%d — %s\n", f.Name, f.Contribution, f.Reasoning)
+        fmt.Printf("  %-25s +%d - %s\n", f.Name, f.Contribution, f.Reasoning)
     }
 }
 ```
@@ -234,7 +234,7 @@ grpcurl \
 
 ## HTTP/2 and TLS
 
-The daemon listens on plain HTTP/1.1 and HTTP/2 (h2c — cleartext HTTP/2). For production deployments, terminate TLS at a load balancer or ingress controller and forward to the daemon over h2c.
+The daemon listens on plain HTTP/1.1 and HTTP/2 (h2c - cleartext HTTP/2). For production deployments, terminate TLS at a load balancer or ingress controller and forward to the daemon over h2c.
 
 ConnectRPC clients automatically negotiate between HTTP/1.1 and HTTP/2. For native gRPC clients that require HTTP/2, ensure your HTTP client has h2c support enabled.
 
