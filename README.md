@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo-light.svg">
-    <img alt="ORES" src=".github/assets/logo-dark.svg" width="420">
+    <img alt="ORES" src=".github/assets/logo-dark.svg" width="280">
   </picture>
 </p>
 
