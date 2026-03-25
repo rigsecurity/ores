@@ -3,12 +3,14 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -17,11 +19,12 @@ import (
 )
 
 const (
-	defaultPort       = ":8080"
-	shutdownTimeout   = 15 * time.Second
-	readHeaderTimeout = 10 * time.Second
-	readTimeout       = 30 * time.Second
-	writeTimeout      = 30 * time.Second
+	defaultPort         = ":8080"
+	defaultMaxBodyBytes = 1 << 20 // 1 MiB
+	shutdownTimeout     = 15 * time.Second
+	readHeaderTimeout   = 10 * time.Second
+	readTimeout         = 30 * time.Second
+	writeTimeout        = 30 * time.Second
 )
 
 func main() {
@@ -32,14 +35,40 @@ func main() {
 		port = defaultPort
 	}
 
+	// TLS configuration.
+	tlsCfg, err := buildTLSConfig(
+		os.Getenv("ORES_TLS_CERT"),
+		os.Getenv("ORES_TLS_KEY"),
+		os.Getenv("ORES_TLS_CLIENT_CA"),
+		os.Getenv("ORES_TLS_MIN_VERSION"),
+	)
+	if err != nil {
+		logger.Error("TLS configuration error", "err", err)
+		os.Exit(1) //nolint:gocritic // intentional: no cleanup needed on startup failure
+	}
+
+	tlsEnabled := tlsCfg != nil
+	mtlsEnabled := tlsEnabled && tlsCfg.ClientAuth == tls.RequireAndVerifyClientCert
+
+	// Middleware options.
+	opts := muxOptions{
+		maxBodyBytes: envInt64("ORES_MAX_BODY_BYTES", defaultMaxBodyBytes),
+		rateLimitRPS: envFloat64("ORES_RATE_LIMIT_RPS", 0),
+		rateBurst:    int(envInt64("ORES_RATE_LIMIT_BURST", 0)),
+		tlsEnabled:   tlsEnabled,
+		corsOrigins:  parseCORSOrigins(os.Getenv("ORES_CORS_ORIGINS")),
+	}
+
 	e := engine.New()
 	h := &OresHandler{engine: e}
 
 	mux := newMux(h, logger)
+	handler := applyMiddleware(mux, opts)
 
 	srv := &http.Server{
 		Addr:              port,
-		Handler:           mux,
+		Handler:           handler,
+		TLSConfig:         tlsCfg,
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		WriteTimeout:      writeTimeout,
@@ -52,10 +81,17 @@ func main() {
 	errCh := make(chan error, 1)
 
 	go func() {
-		logger.Info("oresd starting", "addr", port)
+		logger.Info("oresd starting", "addr", port, "tls", tlsEnabled, "mtls", mtlsEnabled)
 
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errCh <- err
+		var listenErr error
+		if tlsEnabled {
+			listenErr = srv.ListenAndServeTLS("", "") // certs already in TLSConfig
+		} else {
+			listenErr = srv.ListenAndServe()
+		}
+
+		if listenErr != nil && !errors.Is(listenErr, http.ErrServerClosed) {
+			errCh <- listenErr
 		}
 
 		close(errCh)
@@ -85,6 +121,36 @@ func main() {
 	}
 
 	logger.Info("oresd stopped")
+}
+
+// envInt64 reads an environment variable as int64, returning def if unset or unparseable.
+func envInt64(key string, def int64) int64 {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+
+	n, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return def
+	}
+
+	return n
+}
+
+// envFloat64 reads an environment variable as float64, returning def if unset or unparseable.
+func envFloat64(key string, def float64) float64 {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+
+	n, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return def
+	}
+
+	return n
 }
 
 // newMux builds the HTTP mux with ConnectRPC handlers, health/readiness endpoints,

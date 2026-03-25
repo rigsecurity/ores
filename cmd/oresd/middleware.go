@@ -3,11 +3,72 @@ package main
 import (
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
 )
+
+// muxOptions holds configuration for the middleware chain.
+type muxOptions struct {
+	maxBodyBytes int64
+	rateLimitRPS float64
+	rateBurst    int
+	tlsEnabled   bool
+	corsOrigins  []string
+}
+
+// applyMiddleware wraps a handler with the full middleware chain.
+// Order (outermost first): maxBody -> rateLimit -> securityHeaders -> cors.
+func applyMiddleware(handler http.Handler, opts muxOptions) http.Handler {
+	h := handler
+
+	// CORS (innermost of our chain).
+	h = corsMiddleware(opts.corsOrigins, h)
+
+	// Security headers.
+	h = securityHeadersMiddleware(opts.tlsEnabled, h)
+
+	// Rate limiting (only if enabled).
+	if opts.rateLimitRPS > 0 {
+		burst := opts.rateBurst
+		if burst < 1 {
+			burst = max(int(opts.rateLimitRPS), 1)
+		}
+
+		h = rateLimitMiddleware(opts.rateLimitRPS, burst, h)
+	}
+
+	// Max body size (outermost).
+	h = maxBodyMiddleware(opts.maxBodyBytes, h)
+
+	return h
+}
+
+// parseCORSOrigins splits a comma-separated string of origins.
+// Returns nil for empty input.
+func parseCORSOrigins(s string) []string {
+	if s == "" {
+		return nil
+	}
+
+	parts := strings.Split(s, ",")
+	origins := make([]string, 0, len(parts))
+
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			origins = append(origins, p)
+		}
+	}
+
+	if len(origins) == 0 {
+		return nil
+	}
+
+	return origins
+}
 
 // securityHeadersMiddleware sets security-related response headers on every request.
 // When tlsEnabled is true, HSTS is also set.

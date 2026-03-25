@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/rigsecurity/ores/pkg/engine"
 )
 
 // noop handler for middleware tests.
@@ -213,5 +216,44 @@ func TestCORSMiddleware(t *testing.T) {
 		assert.Equal(t, "POST, GET, OPTIONS", rec.Header().Get("Access-Control-Allow-Methods"))
 		assert.Equal(t, "Content-Type, Connect-Protocol-Version, Grpc-Timeout", rec.Header().Get("Access-Control-Allow-Headers"))
 		assert.Equal(t, "86400", rec.Header().Get("Access-Control-Max-Age"))
+	})
+}
+
+func TestApplyMiddleware(t *testing.T) {
+	e := engine.New()
+	h := &OresHandler{engine: e}
+	logger := slog.New(slog.DiscardHandler)
+
+	handler := newMux(h, logger)
+	opts := muxOptions{
+		maxBodyBytes: 1024,
+		tlsEnabled:   true,
+	}
+	wrapped := applyMiddleware(handler, opts)
+
+	// Security headers should be present.
+	rec := httptest.NewRecorder()
+	wrapped.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "nosniff", rec.Header().Get("X-Content-Type-Options"))
+	assert.Equal(t, "max-age=63072000; includeSubDomains", rec.Header().Get("Strict-Transport-Security"))
+}
+
+func TestParseCORSOrigins(t *testing.T) {
+	t.Run("empty string returns nil", func(t *testing.T) {
+		assert.Nil(t, parseCORSOrigins(""))
+	})
+
+	t.Run("single origin", func(t *testing.T) {
+		assert.Equal(t, []string{"https://example.com"}, parseCORSOrigins("https://example.com"))
+	})
+
+	t.Run("multiple origins with spaces", func(t *testing.T) {
+		result := parseCORSOrigins("https://a.com, https://b.com , https://c.com")
+		assert.Equal(t, []string{"https://a.com", "https://b.com", "https://c.com"}, result)
+	})
+
+	t.Run("wildcard", func(t *testing.T) {
+		assert.Equal(t, []string{"*"}, parseCORSOrigins("*"))
 	})
 }
