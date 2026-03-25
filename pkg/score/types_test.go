@@ -129,3 +129,84 @@ func TestEvaluationRequestValidation(t *testing.T) {
 		assert.Error(t, req.Validate())
 	})
 }
+
+func TestEvaluationRequestValidationWithFindings(t *testing.T) {
+	t.Run("valid findings with signals", func(t *testing.T) {
+		req := score.EvaluationRequest{
+			APIVersion: score.APIVersion,
+			Kind:       score.KindEvaluationRequest,
+			Findings:   []float64{7.5, 9.0, 3.2},
+			Signals:    map[string]any{"cvss": map[string]any{"base_score": 8.1}},
+		}
+		assert.NoError(t, req.Validate())
+	})
+
+	t.Run("valid findings without signals", func(t *testing.T) {
+		req := score.EvaluationRequest{
+			APIVersion: score.APIVersion,
+			Kind:       score.KindEvaluationRequest,
+			Findings:   []float64{5.0, 8.5},
+		}
+		assert.NoError(t, req.Validate())
+	})
+
+	t.Run("finding out of range high", func(t *testing.T) {
+		req := score.EvaluationRequest{
+			APIVersion: score.APIVersion,
+			Kind:       score.KindEvaluationRequest,
+			Findings:   []float64{5.0, 10.1},
+		}
+		err := req.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "finding[1]")
+	})
+
+	t.Run("finding out of range negative", func(t *testing.T) {
+		req := score.EvaluationRequest{
+			APIVersion: score.APIVersion,
+			Kind:       score.KindEvaluationRequest,
+			Findings:   []float64{-0.1, 5.0},
+		}
+		err := req.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "finding[0]")
+	})
+
+	t.Run("empty findings falls through to require signals", func(t *testing.T) {
+		req := score.EvaluationRequest{
+			APIVersion: score.APIVersion,
+			Kind:       score.KindEvaluationRequest,
+			Findings:   []float64{},
+		}
+		err := req.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "at least one signal is required")
+	})
+}
+
+func TestEvaluationResultHasMode(t *testing.T) {
+	result := score.EvaluationResult{
+		APIVersion: score.APIVersion,
+		Kind:       score.KindEvaluationResult,
+		Score:      75,
+		Label:      score.LabelHigh,
+		Mode:       "findings",
+		Version:    "0.1.0-preview",
+		Explanation: score.Explanation{
+			FindingsCount: 3,
+			Confidence:    0.8,
+			UnknownSignals: []string{},
+			Warnings:       []string{},
+			Factors:        []score.Factor{},
+		},
+	}
+
+	data, err := json.Marshal(result)
+	require.NoError(t, err)
+
+	var decoded score.EvaluationResult
+	err = json.Unmarshal(data, &decoded)
+	require.NoError(t, err)
+	assert.Equal(t, "findings", decoded.Mode)
+	assert.Equal(t, 3, decoded.Explanation.FindingsCount)
+}
