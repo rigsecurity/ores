@@ -33,7 +33,7 @@ Think of it as the **credit score for cybersecurity risk**. You wouldn't trust a
                     ┌─────────────┐
    CVSS 9.8 ───────▶│             │
    EPSS 0.95 ──────▶│             │
-   KEV: true ──────▶│    ORES     │──────▶ Score: 89 (High)
+   KEV: true ──────▶│    ORES     │──────▶ Score: 89 (high)
    Asset: crown ───▶│   Engine    │──────▶ Confidence: 1.0
    Blast: 142 ─────▶│             │──────▶ "Here's exactly why."
    Patch: 45d ─────▶│             │
@@ -72,7 +72,7 @@ echo '{
 {
   "apiVersion": "ores.dev/v1",
   "kind": "EvaluationResult",
-  "score": 89,
+  "score": 80,
   "label": "high",
   "version": "0.1.0-preview",
   "explanation": {
@@ -81,44 +81,44 @@ echo '{
     "signals_unknown": 0,
     "unknown_signals": [],
     "warnings": [],
-    "confidence": 0.82,
+    "confidence": 0.7,
     "factors": [
       {
-        "factor": "base_vulnerability",
-        "contribution": 27,
-        "derived_from": ["cvss"],
-        "reasoning": "Base severity score from vulnerability data (high impact: 98%)"
-      },
-      {
-        "factor": "exploitability",
+        "name": "base_vulnerability",
         "contribution": 25,
+        "derived_from": ["cvss"],
+        "reasoning": "Base severity score from vulnerability data (high impact: 84%)"
+      },
+      {
+        "name": "exploitability",
+        "contribution": 24,
         "derived_from": ["epss", "threat_intel"],
-        "reasoning": "Likelihood of exploitation based on threat landscape (high impact: 83%)"
+        "reasoning": "Likelihood of exploitation based on threat landscape (high impact: 97%)"
       },
       {
-        "factor": "environmental_context",
-        "contribution": 21,
+        "name": "environmental_context",
+        "contribution": 18,
         "derived_from": ["asset", "blast_radius"],
-        "reasoning": "Environmental risk based on asset criticality and exposure (high impact: 85%)"
+        "reasoning": "Environmental risk based on asset criticality and exposure (high impact: 89%)"
       },
       {
-        "factor": "remediation_gap",
-        "contribution": 10,
+        "name": "remediation_gap",
+        "contribution": 4,
         "derived_from": ["defaults"],
-        "reasoning": "Remediation posture based on patch availability and compliance (moderate impact: 50%)"
+        "reasoning": "Remediation posture based on patch availability and compliance (low impact: 28%)"
       },
       {
-        "factor": "lateral_risk",
-        "contribution": 6,
+        "name": "lateral_risk",
+        "contribution": 9,
         "derived_from": ["blast_radius"],
-        "reasoning": "Lateral movement potential based on blast radius (moderate impact: 52%)"
+        "reasoning": "Lateral movement potential based on blast radius (high impact: 89%)"
       }
     ]
   }
 }
 ```
 
-Every point is accounted for. Factors sum to 89. No hand-waving. No black boxes.
+Every point is accounted for. Factors sum to 80. No hand-waving. No black boxes.
 
 </details>
 
@@ -149,17 +149,19 @@ echo '{
 ```
 
 ```text
-Score:       94 / 100
-Label:       CRITICAL
-Confidence:  1.00
-Model:       0.1.0-preview
+Score:         88
+Label:         high
+Version:       0.1.0-preview
+Confidence:    1.00
+Signals used:  8 / 8
 
-Factors:
-  base_vulnerability     29   [cvss, nist]         Base severity (high impact: 98%)
-  exploitability         25   [epss, threat_intel]  Threat landscape (high impact: 93%)
-  environmental_context  22   [asset, blast_radius] Asset criticality (high impact: 93%)
-  remediation_gap        12   [compliance]          Remediation posture (moderate impact: 50%)
-  lateral_risk            6   [blast_radius]        Lateral movement (moderate impact: 52%)
+FACTOR                 CONTRIBUTION  REASONING
+------                 ------------  ---------
+base_vulnerability     30            Base severity score from vulnerability data (high impact: 99%)
+exploitability         24            Likelihood of exploitation based on threat landscape (high impact: 96%)
+environmental_context  19            Environmental risk based on asset criticality and exposure (high impact: 95%)
+remediation_gap        6             Remediation posture based on patch availability and compliance (moderate impact: 38%)
+lateral_risk           9             Lateral movement potential based on blast radius (high impact: 94%)
 ```
 
 Now score the same CVSS 9.8 on the internal dev box:
@@ -181,20 +183,22 @@ echo '{
 ```
 
 ```text
-Score:       52 / 100
-Label:       MEDIUM
-Confidence:  1.00
-Model:       0.1.0-preview
+Score:         58
+Label:         medium
+Version:       0.1.0-preview
+Confidence:    0.93
+Signals used:  7 / 7
 
-Factors:
-  base_vulnerability     29   [cvss, nist]         Base severity (high impact: 98%)
-  exploitability         20   [epss, threat_intel]  Threat landscape (high impact: 83%)
-  environmental_context   3   [asset, blast_radius] Asset criticality (low impact: 14%)
-  remediation_gap         0   [patch]               Remediation posture (low impact: 2%)
-  lateral_risk            0   [blast_radius]        Lateral movement (low impact: 0%)
+FACTOR                 CONTRIBUTION  REASONING
+------                 ------------  ---------
+base_vulnerability     30            Base severity score from vulnerability data (high impact: 99%)
+exploitability         24            Likelihood of exploitation based on threat landscape (high impact: 96%)
+environmental_context  2             Environmental risk based on asset criticality and exposure (low impact: 11%)
+remediation_gap        2             Remediation posture based on patch availability and compliance (low impact: 16%)
+lateral_risk           0             Lateral movement potential based on blast radius (low impact: 0%)
 ```
 
-**Same CVE. Same CVSS. Completely different risk.** The payment service scores 94 (Critical). The dev box scores 52 (Medium). Now your team knows exactly where to focus.
+**Same CVE. Same CVSS. Completely different risk.** The payment service scores 88 (High). The dev box scores 58 (Medium). Now your team knows exactly where to focus.
 
 ### Pipe it into your workflow
 
@@ -295,7 +299,7 @@ func main() {
     })
 
     fmt.Printf("Score: %d (%s)\n", result.Score, result.Label)
-    // Output: Score: 76 (high)
+    // Output: Score: 56 (medium)
 }
 ```
 

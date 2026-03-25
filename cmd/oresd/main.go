@@ -35,7 +35,7 @@ func main() {
 	e := engine.New()
 	h := &OresHandler{engine: e}
 
-	mux := newMux(h)
+	mux := newMux(h, logger)
 
 	srv := &http.Server{
 		Addr:              port,
@@ -89,8 +89,7 @@ func main() {
 
 // newMux builds the HTTP mux with ConnectRPC handlers, health/readiness endpoints,
 // and audit-logging middleware.
-func newMux(h *OresHandler) http.Handler {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+func newMux(h *OresHandler, logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 
 	// ConnectRPC handler.

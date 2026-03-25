@@ -14,6 +14,7 @@ var _ signals.Signal = &parsers.NIST{}
 func TestNISTImplementsSignal(t *testing.T) {
 	var s signals.Signal = &parsers.NIST{}
 	assert.Equal(t, "nist", s.Name())
+	assert.NotEmpty(t, s.Description())
 }
 
 func TestNISTValidate(t *testing.T) {
@@ -120,6 +121,16 @@ func TestNISTNormalize(t *testing.T) {
 			assert.InDelta(t, tt.wantSeverity, ns["nist_severity"], 0.0001)
 		})
 	}
+}
+
+func TestNISTNormalizeInvalidInput(t *testing.T) {
+	n := &parsers.NIST{}
+
+	_, err := n.Normalize("invalid")
+	require.Error(t, err)
+
+	_, err = n.Normalize(map[string]any{"severity": "extreme"})
+	require.Error(t, err)
 }
 
 func TestNISTFields(t *testing.T) {

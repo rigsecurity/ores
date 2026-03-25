@@ -9,13 +9,19 @@ import (
 	"github.com/rigsecurity/ores/pkg/score"
 )
 
-// dimensionSignals maps dimension names to the signal types that feed them.
-var dimensionSignals = map[string][]string{
-	"base_vulnerability":    {"cvss", "nist"},
-	"exploitability":        {"epss", "threat_intel"},
-	"environmental_context": {"asset", "blast_radius"},
-	"remediation_gap":       {"patch", "compliance"},
-	"lateral_risk":          {"blast_radius"},
+// dimensionSignals is derived from model.DefaultDimensions to ensure a single source
+// of truth for the dimension-to-signal mapping used in both confidence calculation
+// and explanation generation.
+var dimensionSignals = buildDimensionSignals()
+
+func buildDimensionSignals() map[string][]string {
+	m := make(map[string][]string)
+
+	for _, dim := range model.DefaultDimensions() {
+		m[dim.Name] = dim.Sources
+	}
+
+	return m
 }
 
 var dimensionReasoningTemplates = map[string]string{

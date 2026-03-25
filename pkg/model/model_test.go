@@ -159,6 +159,25 @@ func TestModelFactorWeights(t *testing.T) {
 	}
 }
 
+func TestModelWeightsSumToOne(t *testing.T) {
+	m := model.New()
+	sigs := []signals.NormalizedSignal{
+		{"severity": 0.5},
+	}
+
+	result, err := m.Score(sigs)
+	require.NoError(t, err)
+
+	var totalWeight float64
+
+	for _, f := range result.Factors {
+		totalWeight += f.Weight
+	}
+
+	assert.InDelta(t, 1.0, totalWeight, 0.0001,
+		"dimension weights must sum to 1.0 to produce correct scores")
+}
+
 func TestModelEmptySignals(t *testing.T) {
 	m := model.New()
 

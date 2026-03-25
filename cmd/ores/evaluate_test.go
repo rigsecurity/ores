@@ -12,6 +12,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestRootCommand(t *testing.T) {
+	cmd := newRootCmd()
+	require.NotNil(t, cmd)
+	assert.Equal(t, "ores", cmd.Use)
+	assert.Len(t, cmd.Commands(), 3, "root command should have 3 subcommands")
+}
+
+func TestEvaluateCommand(t *testing.T) {
+	cmd := newEvaluateCmd()
+	require.NotNil(t, cmd)
+	assert.Equal(t, "evaluate", cmd.Use)
+
+	// Verify flags are registered.
+	fileFlag := cmd.Flags().Lookup("file")
+	require.NotNil(t, fileFlag)
+	assert.Equal(t, "f", fileFlag.Shorthand)
+
+	outputFlag := cmd.Flags().Lookup("output")
+	require.NotNil(t, outputFlag)
+	assert.Equal(t, "o", outputFlag.Shorthand)
+	assert.Equal(t, "json", outputFlag.DefValue)
+}
+
+func TestEvaluateCommandWithFile(t *testing.T) {
+	input := map[string]any{
+		"apiVersion": score.APIVersion,
+		"kind":       score.KindEvaluationRequest,
+		"signals": map[string]any{
+			"cvss": map[string]any{"base_score": 5.0},
+		},
+	}
+
+	data, err := json.Marshal(input)
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "signals.json")
+	require.NoError(t, os.WriteFile(path, data, 0o600))
+
+	cmd := newEvaluateCmd()
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.SetArgs([]string{"-f", path})
+	require.NoError(t, cmd.Execute())
+	assert.Contains(t, buf.String(), score.APIVersion)
+}
+
 func TestRunEvaluateFromFile(t *testing.T) {
 	input := map[string]any{
 		"apiVersion": score.APIVersion,
@@ -64,8 +111,7 @@ func TestRunEvaluateYAMLOutput(t *testing.T) {
 	err = runEvaluate(path, "yaml", &buf)
 	require.NoError(t, err)
 
-	// The yaml library lowercases field names when no yaml struct tags are present.
-	assert.Contains(t, buf.String(), "apiversion:")
+	assert.Contains(t, buf.String(), "apiVersion:")
 	assert.Contains(t, buf.String(), score.APIVersion)
 }
 
@@ -131,6 +177,88 @@ func TestRunEvaluateInvalidJSON(t *testing.T) {
 	var buf bytes.Buffer
 	err := runEvaluate(path, "json", &buf)
 	require.Error(t, err)
+}
+
+func TestRunEvaluateWithUnknownSignals(t *testing.T) {
+	input := map[string]any{
+		"apiVersion": score.APIVersion,
+		"kind":       score.KindEvaluationRequest,
+		"signals": map[string]any{
+			"cvss":         map[string]any{"base_score": 7.5},
+			"unknown_data": map[string]any{"value": 42},
+		},
+	}
+
+	data, err := json.Marshal(input)
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "signals.json")
+	require.NoError(t, os.WriteFile(path, data, 0o600))
+
+	var buf bytes.Buffer
+	err = runEvaluate(path, "json", &buf)
+	require.NoError(t, err)
+
+	var result score.EvaluationResult
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &result))
+
+	assert.Equal(t, 1, result.Explanation.SignalsUnknown)
+	assert.Contains(t, result.Explanation.UnknownSignals, "unknown_data")
+}
+
+func TestRunEvaluateWithWarnings(t *testing.T) {
+	input := map[string]any{
+		"apiVersion": score.APIVersion,
+		"kind":       score.KindEvaluationRequest,
+		"signals": map[string]any{
+			"cvss": map[string]any{"base_score": 5.0},
+			"epss": map[string]any{"probability": 99.0}, // out of range
+		},
+	}
+
+	data, err := json.Marshal(input)
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "signals.json")
+	require.NoError(t, os.WriteFile(path, data, 0o600))
+
+	var buf bytes.Buffer
+	err = runEvaluate(path, "json", &buf)
+	require.NoError(t, err)
+
+	var result score.EvaluationResult
+	require.NoError(t, json.Unmarshal(buf.Bytes(), &result))
+
+	assert.NotEmpty(t, result.Explanation.Warnings)
+}
+
+func TestRunEvaluateTableWithWarningsAndUnknown(t *testing.T) {
+	input := map[string]any{
+		"apiVersion": score.APIVersion,
+		"kind":       score.KindEvaluationRequest,
+		"signals": map[string]any{
+			"cvss":  map[string]any{"base_score": 5.0},
+			"epss":  map[string]any{"probability": 99.0}, // out of range → warning
+			"bogus": map[string]any{"x": 1},              // unknown signal
+		},
+	}
+
+	data, err := json.Marshal(input)
+	require.NoError(t, err)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "signals.json")
+	require.NoError(t, os.WriteFile(path, data, 0o600))
+
+	var buf bytes.Buffer
+	err = runEvaluate(path, "table", &buf)
+	require.NoError(t, err)
+
+	out := buf.String()
+	assert.Contains(t, out, "Unknown signals:")
+	assert.Contains(t, out, "Warnings:")
 }
 
 func TestRunEvaluateYAMLInput(t *testing.T) {

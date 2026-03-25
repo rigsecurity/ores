@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,7 +23,8 @@ func newTestClient(t *testing.T) oresv1connect.OresServiceClient {
 	e := engine.New()
 	h := &OresHandler{engine: e}
 
-	mux := newMux(h)
+	logger := slog.New(slog.DiscardHandler)
+	mux := newMux(h, logger)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 
@@ -103,11 +105,92 @@ func newTestServer(t *testing.T) *httptest.Server {
 
 	e := engine.New()
 	h := &OresHandler{engine: e}
-	mux := newMux(h)
+	logger := slog.New(slog.DiscardHandler)
+	mux := newMux(h, logger)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 
 	return srv
+}
+
+func TestEvaluateHandlerNilSignals(t *testing.T) {
+	client := newTestClient(t)
+
+	// A nil signals struct should cause a validation error.
+	_, err := client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "EvaluationRequest",
+		Signals:    nil,
+	}))
+	require.Error(t, err)
+
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, connect.CodeInvalidArgument, connectErr.Code())
+}
+
+func TestEvaluateHandlerWrongKind(t *testing.T) {
+	client := newTestClient(t)
+
+	signals, err := structpb.NewStruct(map[string]any{
+		"cvss": map[string]any{"base_score": 5.0},
+	})
+	require.NoError(t, err)
+
+	_, err = client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "WrongKind",
+		Signals:    signals,
+	}))
+	require.Error(t, err)
+
+	var connectErr *connect.Error
+	require.ErrorAs(t, err, &connectErr)
+	assert.Equal(t, connect.CodeInvalidArgument, connectErr.Code())
+}
+
+func TestEvaluateHandlerExplanationFields(t *testing.T) {
+	client := newTestClient(t)
+
+	signals, err := structpb.NewStruct(map[string]any{
+		"cvss":         map[string]any{"base_score": 9.0},
+		"epss":         map[string]any{"probability": 0.9, "percentile": 0.95},
+		"threat_intel": map[string]any{"actively_exploited": true},
+	})
+	require.NoError(t, err)
+
+	resp, err := client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "EvaluationRequest",
+		Signals:    signals,
+	}))
+	require.NoError(t, err)
+
+	expl := resp.Msg.Explanation
+	require.NotNil(t, expl)
+	assert.Equal(t, int32(3), expl.SignalsProvided)
+	assert.Equal(t, int32(3), expl.SignalsUsed)
+	assert.Equal(t, int32(0), expl.SignalsUnknown)
+	assert.NotEmpty(t, expl.Factors)
+	assert.Greater(t, expl.Confidence, 0.0)
+
+	// Every factor must have a name and reasoning.
+	for _, f := range expl.Factors {
+		assert.NotEmpty(t, f.Name)
+		assert.NotEmpty(t, f.Reasoning)
+		assert.NotEmpty(t, f.DerivedFrom)
+	}
+}
+
+func TestAuditMiddlewareNonEvaluatePath(t *testing.T) {
+	srv := newTestServer(t)
+
+	// Non-evaluate paths should pass through without error.
+	resp, err := srv.Client().Get(srv.URL + "/healthz")
+	require.NoError(t, err)
+	defer resp.Body.Close() //nolint:errcheck // best-effort close in test
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestHealthEndpoint(t *testing.T) {

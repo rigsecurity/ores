@@ -69,31 +69,31 @@ func (r *EvaluationRequest) Validate() error {
 
 // EvaluationResult is the output of the ORES engine.
 type EvaluationResult struct {
-	APIVersion  string      `json:"apiVersion"`
-	Kind        string      `json:"kind"`
-	Score       int         `json:"score"`
-	Label       Label       `json:"label"`
-	Version     string      `json:"version"`
-	Explanation Explanation `json:"explanation"`
+	APIVersion  string      `json:"apiVersion"  yaml:"apiVersion"`
+	Kind        string      `json:"kind"        yaml:"kind"`
+	Score       int         `json:"score"       yaml:"score"`
+	Label       Label       `json:"label"       yaml:"label"`
+	Version     string      `json:"version"     yaml:"version"`
+	Explanation Explanation `json:"explanation"  yaml:"explanation"`
 }
 
 // Explanation breaks down how the score was calculated.
 type Explanation struct {
-	SignalsProvided int      `json:"signals_provided"`
-	SignalsUsed     int      `json:"signals_used"`
-	SignalsUnknown  int      `json:"signals_unknown"`
-	UnknownSignals  []string `json:"unknown_signals"`
-	Warnings        []string `json:"warnings"`
-	Confidence      float64  `json:"confidence"`
-	Factors         []Factor `json:"factors"`
+	SignalsProvided int      `json:"signals_provided" yaml:"signals_provided"`
+	SignalsUsed     int      `json:"signals_used"     yaml:"signals_used"`
+	SignalsUnknown  int      `json:"signals_unknown"  yaml:"signals_unknown"`
+	UnknownSignals  []string `json:"unknown_signals"  yaml:"unknown_signals"`
+	Warnings        []string `json:"warnings"         yaml:"warnings"`
+	Confidence      float64  `json:"confidence"       yaml:"confidence"`
+	Factors         []Factor `json:"factors"          yaml:"factors"`
 }
 
 // Factor is one component of the additive score decomposition.
 type Factor struct {
-	Name         string   `json:"name"`
-	Contribution int      `json:"contribution"`
-	DerivedFrom  []string `json:"derived_from"`
-	Reasoning    string   `json:"reasoning"`
+	Name         string   `json:"name"         yaml:"name"`
+	Contribution int      `json:"contribution" yaml:"contribution"`
+	DerivedFrom  []string `json:"derived_from" yaml:"derived_from"`
+	Reasoning    string   `json:"reasoning"    yaml:"reasoning"`
 }
 
 // SignalDescriptor describes a recognized signal type.

@@ -14,6 +14,7 @@ var _ signals.Signal = &parsers.Compliance{}
 func TestComplianceImplementsSignal(t *testing.T) {
 	var s signals.Signal = &parsers.Compliance{}
 	assert.Equal(t, "compliance", s.Name())
+	assert.NotEmpty(t, s.Description())
 }
 
 func TestComplianceValidate(t *testing.T) {
@@ -172,6 +173,24 @@ func TestComplianceNormalize(t *testing.T) {
 			tt.check(t, ns)
 		})
 	}
+}
+
+func TestComplianceNormalizeInvalidInput(t *testing.T) {
+	c := &parsers.Compliance{}
+
+	_, err := c.Normalize("invalid")
+	require.Error(t, err)
+
+	_, err = c.Normalize(map[string]any{})
+	require.Error(t, err)
+}
+
+func TestComplianceNormalizeEmptyFrameworks(t *testing.T) {
+	c := &parsers.Compliance{}
+
+	ns, err := c.Normalize(map[string]any{"frameworks_affected": []any{}})
+	require.NoError(t, err)
+	assert.InDelta(t, 0.0, ns["compliance_scope"], 0.0001)
 }
 
 func TestComplianceFields(t *testing.T) {

@@ -24,7 +24,7 @@ func runVersion(w io.Writer) error {
 	e := engine.New()
 	v := e.Version()
 
-	if _, err := fmt.Fprintf(w, "ores version %s (model: %s)\n", v, v); err != nil {
+	if _, err := fmt.Fprintf(w, "ores model version %s\n", v); err != nil {
 		return fmt.Errorf("writing version: %w", err)
 	}
 
