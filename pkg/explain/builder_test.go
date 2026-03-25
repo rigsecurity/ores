@@ -140,3 +140,47 @@ func TestBuildReasoningLevels(t *testing.T) {
 			"rawScore %.1f should produce level %q", tt.rawScore, tt.wantLevel)
 	}
 }
+
+func TestBuildB4Normal(t *testing.T) {
+	contributions := []model.FactorContribution{
+		{Name: "base_finding", RawScore: 9.8, Weight: 0, Contribution: 93},
+		{Name: "additional_findings", RawScore: 0.5, Weight: 0, Contribution: 10},
+		{Name: "environmental_adjust", RawScore: 0.7, Weight: 0, Contribution: 5},
+		{Name: "blast_radius_adjust", RawScore: 0.6, Weight: 0, Contribution: 3},
+		{Name: "remediation_adjust", RawScore: 0.3, Weight: 0, Contribution: -2},
+	}
+	provided := map[string]bool{"asset": true, "blast_radius": true, "patch": true}
+
+	explanation := explain.BuildB4(contributions, provided, nil, nil, 1.0, 3)
+
+	require.Len(t, explanation.Factors, 5)
+	assert.Equal(t, 3, explanation.FindingsCount)
+	assert.InDelta(t, 1.0, explanation.Confidence, 0.0001)
+	assert.Equal(t, []string{"findings"}, explanation.Factors[0].DerivedFrom)
+	assert.Contains(t, explanation.Factors[0].Reasoning, "critical finding")
+	assert.Contains(t, explanation.Factors[2].DerivedFrom, "asset")
+}
+
+func TestBuildB4NoSignals(t *testing.T) {
+	contributions := []model.FactorContribution{
+		{Name: "base_finding", RawScore: 5.0, Weight: 0, Contribution: 45},
+		{Name: "additional_findings", RawScore: 0.0, Weight: 0, Contribution: 0},
+		{Name: "environmental_adjust", RawScore: 0.5, Weight: 0, Contribution: 0},
+		{Name: "blast_radius_adjust", RawScore: 0.5, Weight: 0, Contribution: 0},
+		{Name: "remediation_adjust", RawScore: 0.5, Weight: 0, Contribution: 0},
+	}
+
+	explanation := explain.BuildB4(contributions, map[string]bool{}, nil, nil, 0.0, 1)
+
+	assert.Equal(t, 1, explanation.FindingsCount)
+	assert.InDelta(t, 0.0, explanation.Confidence, 0.0001)
+	assert.NotNil(t, explanation.UnknownSignals)
+	assert.NotNil(t, explanation.Warnings)
+}
+
+func TestBuildB4NilSlicesInitialized(t *testing.T) {
+	contributions := []model.FactorContribution{}
+	explanation := explain.BuildB4(contributions, map[string]bool{}, nil, nil, 0.0, 0)
+	assert.NotNil(t, explanation.UnknownSignals)
+	assert.NotNil(t, explanation.Warnings)
+}
