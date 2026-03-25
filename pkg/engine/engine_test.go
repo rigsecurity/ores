@@ -18,6 +18,15 @@ func validRequest(signals map[string]any) *score.EvaluationRequest {
 	}
 }
 
+func b4Request(findings []float64, signals map[string]any) *score.EvaluationRequest {
+	return &score.EvaluationRequest{
+		APIVersion: score.APIVersion,
+		Kind:       score.KindEvaluationRequest,
+		Findings:   findings,
+		Signals:    signals,
+	}
+}
+
 func TestEngineEvaluate(t *testing.T) {
 	e := engine.New()
 	req := validRequest(map[string]any{
@@ -34,7 +43,8 @@ func TestEngineEvaluate(t *testing.T) {
 	assert.GreaterOrEqual(t, result.Score, 0)
 	assert.LessOrEqual(t, result.Score, 100)
 	assert.NotEmpty(t, string(result.Label))
-	assert.Equal(t, "0.1.0-preview", result.Version)
+	assert.Equal(t, "0.2.0", result.Version)
+	assert.Equal(t, "weighted", result.Mode)
 	assert.Greater(t, result.Explanation.Confidence, 0.0)
 
 	// Factor contributions must sum to the total score.
@@ -137,7 +147,103 @@ func TestEngineSignals(t *testing.T) {
 
 func TestEngineVersion(t *testing.T) {
 	e := engine.New()
-	assert.Equal(t, "0.1.0-preview", e.Version())
+	assert.Equal(t, "0.2.0", e.Version())
+}
+
+func TestEngineEvaluateB4Mode(t *testing.T) {
+	e := engine.New()
+	req := b4Request(
+		[]float64{8.5, 6.0, 4.2},
+		map[string]any{
+			"asset":        map[string]any{"criticality": "high", "internet_facing": true},
+			"blast_radius": map[string]any{"affected_systems": 50, "lateral_movement_risk": "medium"},
+		},
+	)
+
+	result, err := e.Evaluate(context.Background(), req)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	assert.Equal(t, "b4", result.Mode)
+	assert.GreaterOrEqual(t, result.Score, 0)
+	assert.LessOrEqual(t, result.Score, 100)
+	assert.Positive(t, result.Explanation.FindingsCount)
+}
+
+func TestEngineEvaluateWeightedMode(t *testing.T) {
+	e := engine.New()
+	req := validRequest(map[string]any{
+		"cvss": map[string]any{"base_score": 7.5},
+		"epss": map[string]any{"probability": 0.6, "percentile": 0.8},
+	})
+
+	result, err := e.Evaluate(context.Background(), req)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	assert.Equal(t, "weighted", result.Mode)
+}
+
+func TestEngineEvaluateB4FindingsOnly(t *testing.T) {
+	e := engine.New()
+	req := b4Request([]float64{7.0, 5.0}, nil)
+
+	result, err := e.Evaluate(context.Background(), req)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	assert.Equal(t, "b4", result.Mode)
+	assert.InDelta(t, 0.0, result.Explanation.Confidence, 0.0001)
+}
+
+func TestEngineEvaluateB4EmptyFindingsFallsThrough(t *testing.T) {
+	e := engine.New()
+	req := b4Request(
+		[]float64{},
+		map[string]any{
+			"cvss": map[string]any{"base_score": 7.5},
+		},
+	)
+
+	result, err := e.Evaluate(context.Background(), req)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	assert.Equal(t, "weighted", result.Mode)
+}
+
+func TestEngineEvaluateB4IgnoresSeveritySignals(t *testing.T) {
+	e := engine.New()
+
+	// B4 request with a CVSS signal — should be ignored, score driven by findings only.
+	reqB4 := b4Request(
+		[]float64{5.0},
+		map[string]any{
+			"cvss": map[string]any{"base_score": 10.0}, // severity signal, must be ignored
+		},
+	)
+	resultB4, err := e.Evaluate(context.Background(), reqB4)
+	require.NoError(t, err)
+	require.NotNil(t, resultB4)
+
+	assert.Equal(t, "b4", resultB4.Mode)
+
+	// Findings-only B4 with the same finding — score must be identical.
+	reqFindingsOnly := b4Request([]float64{5.0}, nil)
+	resultFindingsOnly, err := e.Evaluate(context.Background(), reqFindingsOnly)
+	require.NoError(t, err)
+
+	assert.Equal(t, resultFindingsOnly.Score, resultB4.Score,
+		"CVSS signal should be ignored in B4 mode; score should match findings-only result")
+}
+
+func TestEngineEvaluateB4FindingsValidation(t *testing.T) {
+	e := engine.New()
+	req := b4Request([]float64{5.0, 11.0}, nil) // 11.0 is out of [0, 10]
+
+	_, err := e.Evaluate(context.Background(), req)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid request")
 }
 
 func TestEngineDeterminism(t *testing.T) {

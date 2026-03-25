@@ -16,6 +16,7 @@ message EvaluateRequest {
   string api_version = 1;
   string kind = 2;
   google.protobuf.Struct signals = 3;
+  repeated double findings = 4;
 }
 
 message EvaluateResponse {
@@ -25,6 +26,7 @@ message EvaluateResponse {
   string label = 4;
   string version = 5;
   Explanation explanation = 6;
+  string mode = 7;
 }
 
 message Explanation {
@@ -35,6 +37,7 @@ message Explanation {
   repeated string warnings = 5;
   double confidence = 6;
   repeated Factor factors = 7;
+  int32 findings_count = 8;
 }
 
 message Factor {

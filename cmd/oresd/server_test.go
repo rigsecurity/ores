@@ -78,7 +78,7 @@ func TestGetVersionHandler(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp.Msg)
 
-	assert.Equal(t, "0.1.0-preview", resp.Msg.Version)
+	assert.Equal(t, "0.2.0", resp.Msg.Version)
 }
 
 func TestEvaluateHandlerEmptySignals(t *testing.T) {
@@ -211,4 +211,57 @@ func TestReadinessEndpoint(t *testing.T) {
 	defer resp.Body.Close() //nolint:errcheck // best-effort close in test
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestEvaluateHandlerB4Mode(t *testing.T) {
+	client := newTestClient(t)
+
+	signals, err := structpb.NewStruct(map[string]any{
+		"asset": map[string]any{"criticality": "crown_jewel", "network_exposure": true},
+	})
+	require.NoError(t, err)
+
+	resp, err := client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "EvaluationRequest",
+		Findings:   []float64{9.8, 7.5},
+		Signals:    signals,
+	}))
+	require.NoError(t, err)
+	require.NotNil(t, resp.Msg)
+
+	assert.Equal(t, "b4", resp.Msg.Mode)
+	assert.GreaterOrEqual(t, resp.Msg.Score, int32(0))
+	assert.LessOrEqual(t, resp.Msg.Score, int32(100))
+	assert.Positive(t, resp.Msg.Explanation.FindingsCount)
+}
+
+func TestEvaluateHandlerB4FindingsOnly(t *testing.T) {
+	client := newTestClient(t)
+
+	resp, err := client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "EvaluationRequest",
+		Findings:   []float64{5.0},
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "b4", resp.Msg.Mode)
+	assert.InDelta(t, 0.0, resp.Msg.Explanation.Confidence, 0.0001)
+}
+
+func TestEvaluateHandlerWeightedModeHasMode(t *testing.T) {
+	client := newTestClient(t)
+
+	signals, err := structpb.NewStruct(map[string]any{
+		"cvss": map[string]any{"base_score": 7.5},
+	})
+	require.NoError(t, err)
+
+	resp, err := client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "EvaluationRequest",
+		Signals:    signals,
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "weighted", resp.Msg.Mode)
 }

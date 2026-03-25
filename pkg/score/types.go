@@ -45,12 +45,19 @@ func LabelForScore(s int) Label {
 
 // EvaluationRequest is the input to the ORES engine.
 type EvaluationRequest struct {
-	APIVersion string         `json:"apiVersion"`
-	Kind       string         `json:"kind"`
-	Signals    map[string]any `json:"signals"`
+	APIVersion string         `json:"apiVersion"  yaml:"apiVersion"`
+	Kind       string         `json:"kind"        yaml:"kind"`
+	Findings   []float64      `json:"findings,omitempty" yaml:"findings,omitempty"`
+	Signals    map[string]any `json:"signals,omitempty"  yaml:"signals,omitempty"`
 }
 
-// Validate checks that the request has required envelope fields and at least one signal.
+// HasFindings reports whether the request carries B4 multi-finding data.
+func (r *EvaluationRequest) HasFindings() bool {
+	return len(r.Findings) > 0
+}
+
+// Validate checks that the request has required envelope fields and either valid
+// findings (B4 mode) or at least one signal (weighted single-vulnerability mode).
 func (r *EvaluationRequest) Validate() error {
 	if r.APIVersion == "" {
 		return errors.New("apiVersion is required")
@@ -60,6 +67,14 @@ func (r *EvaluationRequest) Validate() error {
 	}
 	if r.Kind != KindEvaluationRequest {
 		return fmt.Errorf("unexpected kind %q, expected %q", r.Kind, KindEvaluationRequest)
+	}
+	if r.HasFindings() {
+		for i, f := range r.Findings {
+			if f < 0 || f > 10 {
+				return fmt.Errorf("finding[%d] must be in [0, 10], got %v", i, f)
+			}
+		}
+		return nil
 	}
 	if len(r.Signals) == 0 {
 		return errors.New("at least one signal is required")
@@ -73,6 +88,7 @@ type EvaluationResult struct {
 	Kind        string      `json:"kind"        yaml:"kind"`
 	Score       int         `json:"score"       yaml:"score"`
 	Label       Label       `json:"label"       yaml:"label"`
+	Mode        string      `json:"mode"        yaml:"mode"`
 	Version     string      `json:"version"     yaml:"version"`
 	Explanation Explanation `json:"explanation"  yaml:"explanation"`
 }
@@ -82,6 +98,7 @@ type Explanation struct {
 	SignalsProvided int      `json:"signals_provided" yaml:"signals_provided"`
 	SignalsUsed     int      `json:"signals_used"     yaml:"signals_used"`
 	SignalsUnknown  int      `json:"signals_unknown"  yaml:"signals_unknown"`
+	FindingsCount   int      `json:"findings_count,omitempty" yaml:"findings_count,omitempty"`
 	UnknownSignals  []string `json:"unknown_signals"  yaml:"unknown_signals"`
 	Warnings        []string `json:"warnings"         yaml:"warnings"`
 	Confidence      float64  `json:"confidence"       yaml:"confidence"`

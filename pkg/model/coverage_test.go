@@ -149,6 +149,48 @@ func TestCalculateConfidenceIrrelevantSignals(t *testing.T) {
 	assert.InDelta(t, 0.0, confidence, 0.0001, "unrecognized signals should not affect confidence")
 }
 
+func TestCalculateB4ConfidenceAllAxes(t *testing.T) {
+	provided := map[string]bool{
+		"asset": true, "blast_radius": true, "patch": true,
+	}
+	confidence := model.CalculateB4Confidence(provided)
+	assert.InDelta(t, 1.0, confidence, 0.0001)
+}
+
+func TestCalculateB4ConfidenceNoSignals(t *testing.T) {
+	confidence := model.CalculateB4Confidence(map[string]bool{})
+	assert.InDelta(t, 0.0, confidence, 0.0001)
+}
+
+func TestCalculateB4ConfidenceOneAxis(t *testing.T) {
+	provided := map[string]bool{"asset": true}
+	confidence := model.CalculateB4Confidence(provided)
+	assert.InDelta(t, 1.0/3.0, confidence, 0.01)
+}
+
+func TestCalculateB4ConfidenceTwoAxes(t *testing.T) {
+	provided := map[string]bool{"asset": true, "blast_radius": true}
+	confidence := model.CalculateB4Confidence(provided)
+	assert.InDelta(t, 2.0/3.0, confidence, 0.01)
+}
+
+func TestCalculateB4ConfidenceMultipleSignalsPerAxis(t *testing.T) {
+	provided := map[string]bool{"patch": true, "compliance": true}
+	confidence := model.CalculateB4Confidence(provided)
+	assert.InDelta(t, 1.0/3.0, confidence, 0.01)
+}
+
+func TestCalculateB4ConfidenceIrrelevantSignals(t *testing.T) {
+	provided := map[string]bool{"cvss": true, "epss": true}
+	confidence := model.CalculateB4Confidence(provided)
+	assert.InDelta(t, 0.0, confidence, 0.0001)
+}
+
+func TestCalculateB4ConfidenceNil(t *testing.T) {
+	confidence := model.CalculateB4Confidence(nil)
+	assert.InDelta(t, 0.0, confidence, 0.0001)
+}
+
 func TestCalculateConfidenceHalfCoveragePerDimension(t *testing.T) {
 	dims := model.DefaultDimensions()
 	// Provide exactly one source per two-source dimension.

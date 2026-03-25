@@ -29,6 +29,7 @@ func (h *OresHandler) Evaluate(
 	engineReq := &score.EvaluationRequest{
 		APIVersion: req.Msg.ApiVersion,
 		Kind:       req.Msg.Kind,
+		Findings:   req.Msg.Findings,
 		Signals:    structToSignals(req.Msg.Signals),
 	}
 
@@ -43,6 +44,7 @@ func (h *OresHandler) Evaluate(
 		Score:       safeInt32(result.Score), //nolint:gosec // score is always in [0,100]
 		Label:       string(result.Label),
 		Version:     result.Version,
+		Mode:        result.Mode,
 		Explanation: explanationToProto(result.Explanation),
 	}), nil
 }
@@ -104,6 +106,7 @@ func explanationToProto(e score.Explanation) *oresv1.Explanation {
 		SignalsProvided: safeInt32(e.SignalsProvided), //nolint:gosec // signal counts are small positive integers
 		SignalsUsed:     safeInt32(e.SignalsUsed),     //nolint:gosec // signal counts are small positive integers
 		SignalsUnknown:  safeInt32(e.SignalsUnknown),  //nolint:gosec // signal counts are small positive integers
+		FindingsCount:   safeInt32(e.FindingsCount),   //nolint:gosec // findings count is a small positive integer
 		UnknownSignals:  e.UnknownSignals,
 		Warnings:        e.Warnings,
 		Confidence:      e.Confidence,

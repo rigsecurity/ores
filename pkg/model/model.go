@@ -114,11 +114,11 @@ var dimDefs = []dimDefinition{
 	},
 }
 
-// Score computes the risk score for the given normalized signals.
+// ScoreWeighted computes the risk score for the given normalized signals.
 // It merges all signals into a single factor map, computes per-dimension scores,
 // aggregates with weighted sum * 100, rounds to integer (half-up), and uses the
 // largest-remainder method to distribute integer contributions that sum exactly to the score.
-func (m *Model) Score(normalized []signals.NormalizedSignal) (*ScoreResult, error) {
+func (m *Model) ScoreWeighted(normalized []signals.NormalizedSignal) (*ScoreResult, error) {
 	// Merge all normalized signals into one factor map (last write wins for duplicates).
 	factors := make(map[string]float64)
 
@@ -214,4 +214,16 @@ func (m *Model) Score(normalized []signals.NormalizedSignal) (*ScoreResult, erro
 	}
 
 	return result, nil
+}
+
+// Score routes to the appropriate scoring algorithm based on whether findings are present.
+func (m *Model) Score(findings []float64, normalized []signals.NormalizedSignal) (*ScoreResult, error) {
+	if len(findings) > 0 {
+		factors := make(map[string]float64)
+		for _, sig := range normalized {
+			maps.Copy(factors, sig)
+		}
+		return m.ScoreB4(findings, factors)
+	}
+	return m.ScoreWeighted(normalized)
 }

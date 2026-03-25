@@ -186,8 +186,14 @@ func writeTable(result *score.EvaluationResult, w io.Writer) error {
 
 	tw.printf("Score:\t%d\n", result.Score)
 	tw.printf("Label:\t%s\n", result.Label)
+	tw.printf("Mode:\t%s\n", result.Mode)
 	tw.printf("Version:\t%s\n", result.Version)
 	tw.printf("Confidence:\t%.2f\n", result.Explanation.Confidence)
+
+	if result.Explanation.FindingsCount > 0 {
+		tw.printf("Findings:\t%d\n", result.Explanation.FindingsCount)
+	}
+
 	tw.printf("Signals used:\t%d / %d\n", result.Explanation.SignalsUsed, result.Explanation.SignalsProvided)
 
 	if len(result.Explanation.UnknownSignals) > 0 {

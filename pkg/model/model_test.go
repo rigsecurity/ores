@@ -16,7 +16,7 @@ func TestNewModel(t *testing.T) {
 
 func TestModelVersion(t *testing.T) {
 	m := model.New()
-	assert.Equal(t, "0.1.0-preview", m.Version())
+	assert.Equal(t, "0.2.0", m.Version())
 }
 
 func TestModelDeterminism(t *testing.T) {
@@ -27,10 +27,10 @@ func TestModelDeterminism(t *testing.T) {
 		{"asset_criticality": 0.7, "network_exposure": 1.0},
 	}
 
-	result1, err := m.Score(sigs)
+	result1, err := m.ScoreWeighted(sigs)
 	require.NoError(t, err)
 
-	result2, err := m.Score(sigs)
+	result2, err := m.ScoreWeighted(sigs)
 	require.NoError(t, err)
 
 	assert.Equal(t, result1.Score, result2.Score)
@@ -45,7 +45,7 @@ func TestModelHighSeverity(t *testing.T) {
 		{"asset_criticality": 1.0},
 	}
 
-	result, err := m.Score(sigs)
+	result, err := m.ScoreWeighted(sigs)
 	require.NoError(t, err)
 	// Three strong signals covering base_vulnerability, exploitability, and environmental_context
 	// should score meaningfully higher than low-severity baselines (~26).
@@ -58,7 +58,7 @@ func TestModelLowSeverity(t *testing.T) {
 		{"severity": 0.1},
 	}
 
-	result, err := m.Score(sigs)
+	result, err := m.ScoreWeighted(sigs)
 	require.NoError(t, err)
 	assert.LessOrEqual(t, result.Score, 40, "low severity only should score <= 40")
 }
@@ -80,7 +80,7 @@ func TestModelFactorSum(t *testing.T) {
 	}
 
 	for _, sigs := range testCases {
-		result, err := m.Score(sigs)
+		result, err := m.ScoreWeighted(sigs)
 		require.NoError(t, err)
 
 		total := 0
@@ -104,7 +104,7 @@ func TestModelScoreRange(t *testing.T) {
 	}
 
 	for _, sigs := range testCases {
-		result, err := m.Score(sigs)
+		result, err := m.ScoreWeighted(sigs)
 		require.NoError(t, err)
 		assert.GreaterOrEqual(t, result.Score, 0)
 		assert.LessOrEqual(t, result.Score, 100)
@@ -117,7 +117,7 @@ func TestModelFactorNames(t *testing.T) {
 		{"severity": 0.5},
 	}
 
-	result, err := m.Score(sigs)
+	result, err := m.ScoreWeighted(sigs)
 	require.NoError(t, err)
 
 	expectedNames := []string{
@@ -141,7 +141,7 @@ func TestModelFactorWeights(t *testing.T) {
 		{"severity": 0.5},
 	}
 
-	result, err := m.Score(sigs)
+	result, err := m.ScoreWeighted(sigs)
 	require.NoError(t, err)
 
 	expectedWeights := map[string]float64{
@@ -165,7 +165,7 @@ func TestModelWeightsSumToOne(t *testing.T) {
 		{"severity": 0.5},
 	}
 
-	result, err := m.Score(sigs)
+	result, err := m.ScoreWeighted(sigs)
 	require.NoError(t, err)
 
 	var totalWeight float64
@@ -181,7 +181,7 @@ func TestModelWeightsSumToOne(t *testing.T) {
 func TestModelEmptySignals(t *testing.T) {
 	m := model.New()
 
-	result, err := m.Score(nil)
+	result, err := m.ScoreWeighted(nil)
 	require.NoError(t, err)
 	assert.GreaterOrEqual(t, result.Score, 0)
 	assert.LessOrEqual(t, result.Score, 100)
@@ -202,7 +202,7 @@ func TestModelRawScoreInRange(t *testing.T) {
 		{"exploit_probability": 0.4, "active_exploitation": 1.0},
 	}
 
-	result, err := m.Score(sigs)
+	result, err := m.ScoreWeighted(sigs)
 	require.NoError(t, err)
 
 	for _, f := range result.Factors {
