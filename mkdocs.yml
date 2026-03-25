@@ -25,6 +25,7 @@ nav:
   - Concepts:
     - Signals: concepts/signals.md
     - Scoring: concepts/scoring.md
+    - Research & Methodology: concepts/research.md
     - Confidence: concepts/confidence.md
   - Guides:
     - CLI: guides/cli.md
