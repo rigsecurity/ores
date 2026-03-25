@@ -37,7 +37,7 @@ The `oresd` daemon exposes the ORES engine as a long-running HTTP service using 
 The daemon starts on port `8080` by default and logs to stdout in JSON format:
 
 ```json
-{"time":"2026-03-25T12:00:00Z","level":"INFO","msg":"oresd starting","addr":":8080"}
+{"time":"2026-03-25T12:00:00Z","level":"INFO","msg":"oresd starting","addr":":8080","tls":false,"mtls":false}
 ```
 
 ---
@@ -49,10 +49,150 @@ The daemon starts on port `8080` by default and logs to stdout in JSON format:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ORES_PORT` | `:8080` | TCP address the daemon listens on. Must include the leading colon. |
+| `ORES_TLS_CERT` | _(unset)_ | Path to PEM-encoded server certificate. Enables TLS when set with `ORES_TLS_KEY`. |
+| `ORES_TLS_KEY` | _(unset)_ | Path to PEM-encoded server private key. Required when `ORES_TLS_CERT` is set. |
+| `ORES_TLS_CLIENT_CA` | _(unset)_ | Path to PEM-encoded CA bundle for client certificate verification. Enables mTLS. |
+| `ORES_TLS_MIN_VERSION` | `1.2` | Minimum TLS version: `1.2` or `1.3`. |
+| `ORES_MAX_REQUEST_BYTES` | `1048576` | Maximum request body size in bytes. Set to `0` to disable. |
+| `ORES_RATE_LIMIT` | `0` | Maximum requests per second per source IP. `0` disables rate limiting. |
+| `ORES_RATE_BURST` | _(= rate limit)_ | Token bucket burst size. Defaults to `ORES_RATE_LIMIT` value. |
+| `ORES_CORS_ORIGINS` | _(unset)_ | Comma-separated allowed CORS origins, or `*` for any. |
+
+---
+
+## :material-lock: TLS / mTLS
+
+The daemon supports built-in TLS and mutual TLS (mTLS) via environment variables. When TLS is not configured, the daemon serves plain HTTP (unchanged default behavior).
+
+!!! info "Certificate rotation"
+    TLS certificates are loaded once at startup. To pick up rotated certificates (e.g., from cert-manager or Let's Encrypt), restart the daemon. Graceful shutdown ensures zero dropped requests during restarts.
+
+### TLS
+
+Provide a certificate and key to enable HTTPS:
+
+=== ":material-console: Local"
+
+    ```bash
+    ORES_TLS_CERT=/path/to/server.crt \
+    ORES_TLS_KEY=/path/to/server.key \
+    oresd
+    ```
+
+=== ":material-docker: Docker"
+
+    ```bash
+    docker run -p 8443:8443 \
+      -v /path/to/certs:/certs:ro \
+      -e ORES_PORT=:8443 \
+      -e ORES_TLS_CERT=/certs/server.crt \
+      -e ORES_TLS_KEY=/certs/server.key \
+      ghcr.io/rigsecurity/oresd:latest
+    ```
+
+### mTLS (mutual TLS)
+
+Add a client CA to require and verify client certificates:
+
+=== ":material-console: Local"
+
+    ```bash
+    ORES_TLS_CERT=/path/to/server.crt \
+    ORES_TLS_KEY=/path/to/server.key \
+    ORES_TLS_CLIENT_CA=/path/to/ca.crt \
+    oresd
+    ```
+
+=== ":material-docker: Docker"
+
+    ```bash
+    docker run -p 8443:8443 \
+      -v /path/to/certs:/certs:ro \
+      -e ORES_PORT=:8443 \
+      -e ORES_TLS_CERT=/certs/server.crt \
+      -e ORES_TLS_KEY=/certs/server.key \
+      -e ORES_TLS_CLIENT_CA=/certs/ca.crt \
+      ghcr.io/rigsecurity/oresd:latest
+    ```
+
+Clients must present a certificate signed by the specified CA. Connections without a valid client certificate are rejected at the TLS handshake level.
+
+!!! tip "When to use mTLS"
+    Use mTLS when deploying `oresd` as a standalone service that should only accept requests from authenticated internal services. For sidecar deployments where the pod network is trusted, plain TLS or even plain HTTP may be sufficient.
+
+### TLS Version
+
+By default, the minimum TLS version is 1.2. To require TLS 1.3:
 
 ```bash
-ORES_PORT=:9090 oresd
+ORES_TLS_MIN_VERSION=1.3 oresd
 ```
+
+### Cipher Suites
+
+When using TLS 1.2, only AEAD cipher suites are allowed (no CBC, no RC4):
+
+- `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`
+- `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`
+- `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`
+- `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`
+- `TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256`
+- `TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256`
+
+TLS 1.3 cipher suites are managed by Go's standard library and are always strong.
+
+---
+
+## :material-shield-check: Security
+
+### Request Size Limits
+
+The daemon limits request bodies to 1 MB by default. Override with `ORES_MAX_REQUEST_BYTES`:
+
+```bash
+ORES_MAX_REQUEST_BYTES=2097152 oresd   # 2 MB
+ORES_MAX_REQUEST_BYTES=0 oresd         # disable limit
+```
+
+Requests exceeding the limit receive a `413 Request Entity Too Large` response.
+
+!!! note "Body size and protocol framing"
+    The limit applies to the raw HTTP request body, which includes any protocol framing overhead (e.g., gRPC frame headers). The default 1 MB is generous for typical evaluation requests (under 10 KB).
+
+### Rate Limiting
+
+Per-IP rate limiting is disabled by default. Enable it with `ORES_RATE_LIMIT`:
+
+```bash
+ORES_RATE_LIMIT=100 oresd              # 100 requests/sec per IP
+ORES_RATE_LIMIT=50 ORES_RATE_BURST=100 oresd  # 50 rps sustained, 100 burst
+```
+
+Rate-limited requests receive a `429 Too Many Requests` response with a `Retry-After: 1` header. Health and readiness probes (`/healthz`, `/readyz`) are exempt.
+
+### Security Headers
+
+The daemon automatically adds the following headers to every response:
+
+| Header | Value |
+|--------|-------|
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` |
+| `Content-Security-Policy` | `default-src 'none'` |
+| `Referrer-Policy` | `no-referrer` |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains` _(TLS only)_ |
+
+### CORS
+
+CORS is disabled by default. Enable it by listing allowed origins:
+
+```bash
+ORES_CORS_ORIGINS="https://app.example.com,https://dashboard.example.com" oresd
+ORES_CORS_ORIGINS="*" oresd  # allow all origins (development only)
+```
+
+!!! warning "CORS wildcard"
+    Setting `ORES_CORS_ORIGINS="*"` allows any website to call your daemon from a browser. Use this only for local development. In production, list specific origins.
 
 ---
 
@@ -90,7 +230,7 @@ curl -s -X POST http://localhost:8080/ores.v1.OresService/Evaluate \
   "kind": "EvaluationResult",
   "score": 87,
   "label": "high",
-  "version": "0.1.0-preview",
+  "version": "0.2.0",
   "explanation": {
     "signalsProvided": 4,
     "signalsUsed": 4,
@@ -146,7 +286,7 @@ curl -s -X POST http://localhost:8080/ores.v1.OresService/GetVersion \
 
 ```json
 {
-  "version": "0.1.0-preview"
+  "version": "0.2.0"
 }
 ```
 
@@ -307,6 +447,7 @@ Every `Evaluate` call is automatically logged to stdout:
   "level": "INFO",
   "msg": "audit",
   "procedure": "/ores.v1.OresService/Evaluate",
+  "remote_addr": "10.0.0.1:54321",
   "status": 200,
   "latency_ms": 1
 }
