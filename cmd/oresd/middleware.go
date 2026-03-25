@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
@@ -10,6 +11,16 @@ import (
 
 	"golang.org/x/time/rate"
 )
+
+// Probe paths used by Kubernetes liveness/readiness checks.
+// Shared between mux registration and rate limiter exemption.
+const (
+	healthzPath = "/healthz"
+	readyzPath  = "/readyz"
+)
+
+// HSTS header value: 2 years, include subdomains.
+const hstsValue = "max-age=63072000; includeSubDomains"
 
 // muxOptions holds configuration for the middleware chain.
 type muxOptions struct {
@@ -48,24 +59,38 @@ func applyMiddleware(handler http.Handler, opts muxOptions) http.Handler {
 }
 
 // parseCORSOrigins splits a comma-separated string of origins.
-// Returns nil for empty input.
-func parseCORSOrigins(s string) []string {
+// Returns nil for empty input. Logs warnings for likely misconfigurations.
+func parseCORSOrigins(logger *slog.Logger, s string) []string {
 	if s == "" {
 		return nil
 	}
 
 	parts := strings.Split(s, ",")
 	origins := make([]string, 0, len(parts))
+	hasWildcard := false
 
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
-		if p != "" {
-			origins = append(origins, p)
+		if p == "" {
+			continue
 		}
+
+		if p == "*" {
+			hasWildcard = true
+		} else if !strings.HasPrefix(p, "http://") && !strings.HasPrefix(p, "https://") {
+			logger.Warn("CORS origin missing scheme — browsers send Origin with scheme, this may not match",
+				"origin", p)
+		}
+
+		origins = append(origins, p)
 	}
 
 	if len(origins) == 0 {
 		return nil
+	}
+
+	if hasWildcard && len(origins) > 1 {
+		logger.Warn("CORS wildcard '*' combined with specific origins — wildcard takes precedence, other origins are ignored")
 	}
 
 	return origins
@@ -78,9 +103,10 @@ func securityHeadersMiddleware(tlsEnabled bool, next http.Handler) http.Handler 
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Content-Security-Policy", "default-src 'none'")
+		w.Header().Set("Referrer-Policy", "no-referrer")
 
 		if tlsEnabled {
-			w.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
+			w.Header().Set("Strict-Transport-Security", hstsValue)
 		}
 
 		next.ServeHTTP(w, r)
@@ -135,9 +161,12 @@ func newRateLimiterStore(rps float64, burst int) *rateLimiterStore {
 }
 
 // get returns the rate limiter for the given IP, creating one if necessary.
+// Uses LoadOrStore to avoid a race where two goroutines both create a limiter
+// for the same new IP, effectively doubling the burst allowance.
 func (s *rateLimiterStore) get(ip string) *rate.Limiter {
 	now := time.Now().Unix()
 
+	// Fast path: IP already tracked.
 	if v, ok := s.limiters.Load(ip); ok {
 		entry := v.(*ipLimiter)
 		entry.lastSeen.Store(now)
@@ -145,14 +174,15 @@ func (s *rateLimiterStore) get(ip string) *rate.Limiter {
 		return entry.limiter
 	}
 
-	limiter := rate.NewLimiter(s.rps, s.burst)
-
-	entry := &ipLimiter{limiter: limiter}
+	// Slow path: new IP — use LoadOrStore to ensure exactly one limiter wins.
+	entry := &ipLimiter{limiter: rate.NewLimiter(s.rps, s.burst)}
 	entry.lastSeen.Store(now)
 
-	s.limiters.Store(ip, entry)
+	actual, _ := s.limiters.LoadOrStore(ip, entry)
+	winner := actual.(*ipLimiter)
+	winner.lastSeen.Store(now)
 
-	return limiter
+	return winner.limiter
 }
 
 // cleanup periodically evicts IP entries that have been idle longer than idleTimeout.
@@ -187,7 +217,7 @@ func rateLimitMiddleware(rps float64, burst int, next http.Handler) http.Handler
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Exempt health probes from rate limiting.
-		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+		if r.URL.Path == healthzPath || r.URL.Path == readyzPath {
 			next.ServeHTTP(w, r)
 
 			return
@@ -249,6 +279,11 @@ func corsMiddleware(origins []string, next http.Handler) http.Handler {
 		}
 
 		w.Header().Set("Access-Control-Allow-Origin", matchedOrigin)
+
+		// Non-wildcard responses vary by Origin so caches don't serve wrong CORS headers.
+		if !wildcard {
+			w.Header().Set("Vary", "Origin")
+		}
 
 		// Handle preflight OPTIONS requests.
 		if r.Method == http.MethodOptions {

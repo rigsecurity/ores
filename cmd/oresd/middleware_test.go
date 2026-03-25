@@ -27,6 +27,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 		assert.Equal(t, "nosniff", rec.Header().Get("X-Content-Type-Options"))
 		assert.Equal(t, "DENY", rec.Header().Get("X-Frame-Options"))
 		assert.Equal(t, "default-src 'none'", rec.Header().Get("Content-Security-Policy"))
+		assert.Equal(t, "no-referrer", rec.Header().Get("Referrer-Policy"))
 	})
 
 	t.Run("HSTS added when TLS enabled", func(t *testing.T) {
@@ -34,7 +35,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
 
-		assert.Equal(t, "max-age=63072000; includeSubDomains", rec.Header().Get("Strict-Transport-Security"))
+		assert.Equal(t, hstsValue, rec.Header().Get("Strict-Transport-Security"))
 	})
 
 	t.Run("HSTS absent when TLS disabled", func(t *testing.T) {
@@ -186,7 +187,7 @@ func TestCORSMiddleware(t *testing.T) {
 		assert.Equal(t, "*", rec.Header().Get("Access-Control-Allow-Origin"))
 	})
 
-	t.Run("specific origin matched", func(t *testing.T) {
+	t.Run("specific origin matched with Vary header", func(t *testing.T) {
 		handler := corsMiddleware([]string{"https://app.example.com"}, okHandler)
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.Header.Set("Origin", "https://app.example.com")
@@ -195,6 +196,18 @@ func TestCORSMiddleware(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Equal(t, "https://app.example.com", rec.Header().Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, "Origin", rec.Header().Get("Vary"))
+	})
+
+	t.Run("wildcard does not set Vary header", func(t *testing.T) {
+		handler := corsMiddleware([]string{"*"}, okHandler)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Origin", "https://example.com")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(t, "*", rec.Header().Get("Access-Control-Allow-Origin"))
+		assert.Empty(t, rec.Header().Get("Vary"))
 	})
 
 	t.Run("non-matching origin gets no CORS headers", func(t *testing.T) {
@@ -240,24 +253,26 @@ func TestApplyMiddleware(t *testing.T) {
 	wrapped.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
 	assert.Equal(t, http.StatusOK, rec.Code)
 	assert.Equal(t, "nosniff", rec.Header().Get("X-Content-Type-Options"))
-	assert.Equal(t, "max-age=63072000; includeSubDomains", rec.Header().Get("Strict-Transport-Security"))
+	assert.Equal(t, hstsValue, rec.Header().Get("Strict-Transport-Security"))
 }
 
 func TestParseCORSOrigins(t *testing.T) {
+	logger := slog.New(slog.DiscardHandler)
+
 	t.Run("empty string returns nil", func(t *testing.T) {
-		assert.Nil(t, parseCORSOrigins(""))
+		assert.Nil(t, parseCORSOrigins(logger, ""))
 	})
 
 	t.Run("single origin", func(t *testing.T) {
-		assert.Equal(t, []string{"https://example.com"}, parseCORSOrigins("https://example.com"))
+		assert.Equal(t, []string{"https://example.com"}, parseCORSOrigins(logger, "https://example.com"))
 	})
 
 	t.Run("multiple origins with spaces", func(t *testing.T) {
-		result := parseCORSOrigins("https://a.com, https://b.com , https://c.com")
+		result := parseCORSOrigins(logger, "https://a.com, https://b.com , https://c.com")
 		assert.Equal(t, []string{"https://a.com", "https://b.com", "https://c.com"}, result)
 	})
 
 	t.Run("wildcard", func(t *testing.T) {
-		assert.Equal(t, []string{"*"}, parseCORSOrigins("*"))
+		assert.Equal(t, []string{"*"}, parseCORSOrigins(logger, "*"))
 	})
 }

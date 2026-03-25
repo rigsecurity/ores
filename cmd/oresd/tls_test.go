@@ -250,5 +250,8 @@ func TestTLSServerIntegration(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, healthResp.StatusCode)
 	assert.Equal(t, "nosniff", healthResp.Header.Get("X-Content-Type-Options"))
-	assert.Equal(t, "max-age=63072000; includeSubDomains", healthResp.Header.Get("Strict-Transport-Security"))
+	assert.Equal(t, hstsValue, healthResp.Header.Get("Strict-Transport-Security"))
+
+	// Verify TLS version is at least 1.2.
+	assert.GreaterOrEqual(t, healthResp.TLS.Version, uint16(tls.VersionTLS12))
 }

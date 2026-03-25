@@ -20,7 +20,8 @@ import (
 
 const (
 	defaultPort         = ":8080"
-	defaultMaxBodyBytes = 1 << 20 // 1 MiB
+	defaultMaxBodyBytes = 1 << 20  // 1 MiB
+	maxHeaderBytes      = 64 << 10 // 64 KiB
 	shutdownTimeout     = 15 * time.Second
 	readHeaderTimeout   = 10 * time.Second
 	readTimeout         = 30 * time.Second
@@ -51,12 +52,27 @@ func main() {
 	mtlsEnabled := tlsEnabled && tlsCfg.ClientAuth == tls.RequireAndVerifyClientCert
 
 	// Middleware options.
+	rateLimit := envFloat64(logger, "ORES_RATE_LIMIT", 0)
+	rateBurst := int(envInt64(logger, "ORES_RATE_BURST", 0))
+
+	if rateLimit < 0 {
+		logger.Warn("ORES_RATE_LIMIT must be non-negative, disabling rate limiting", "value", rateLimit)
+
+		rateLimit = 0
+	}
+
+	if rateBurst < 0 {
+		logger.Warn("ORES_RATE_BURST must be non-negative, using default", "value", rateBurst)
+
+		rateBurst = 0
+	}
+
 	opts := muxOptions{
 		maxBodyBytes: envInt64(logger, "ORES_MAX_REQUEST_BYTES", defaultMaxBodyBytes),
-		rateLimitRPS: envFloat64(logger, "ORES_RATE_LIMIT", 0),
-		rateBurst:    int(envInt64(logger, "ORES_RATE_BURST", 0)),
+		rateLimitRPS: rateLimit,
+		rateBurst:    rateBurst,
 		tlsEnabled:   tlsEnabled,
-		corsOrigins:  parseCORSOrigins(os.Getenv("ORES_CORS_ORIGINS")),
+		corsOrigins:  parseCORSOrigins(logger, os.Getenv("ORES_CORS_ORIGINS")),
 	}
 
 	e := engine.New()
@@ -72,6 +88,7 @@ func main() {
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		WriteTimeout:      writeTimeout,
+		MaxHeaderBytes:    maxHeaderBytes,
 		BaseContext: func(_ net.Listener) context.Context {
 			return context.Background()
 		},
@@ -169,10 +186,10 @@ func newMux(h *OresHandler, logger *slog.Logger) http.Handler {
 	mux.Handle(path, auditMiddleware(logger, connectHandler))
 
 	// Health and readiness probes.
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc(healthzPath, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	mux.HandleFunc("/readyz", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc(readyzPath, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -196,6 +213,7 @@ func auditMiddleware(logger *slog.Logger, next http.Handler) http.Handler {
 
 		logger.Info("audit",
 			"procedure", r.URL.Path,
+			"remote_addr", r.RemoteAddr,
 			"status", rw.statusCode,
 			"latency_ms", time.Since(start).Milliseconds(),
 		)
@@ -203,6 +221,7 @@ func auditMiddleware(logger *slog.Logger, next http.Handler) http.Handler {
 }
 
 // responseRecorder wraps http.ResponseWriter to capture the status code.
+// It delegates Flush to the underlying writer so HTTP/2 and gRPC streaming work correctly.
 type responseRecorder struct {
 	http.ResponseWriter
 	statusCode int
@@ -211,4 +230,12 @@ type responseRecorder struct {
 func (rr *responseRecorder) WriteHeader(code int) {
 	rr.statusCode = code
 	rr.ResponseWriter.WriteHeader(code)
+}
+
+// Flush delegates to the underlying ResponseWriter if it implements http.Flusher.
+// This is required for HTTP/2 and gRPC streaming support.
+func (rr *responseRecorder) Flush() {
+	if f, ok := rr.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
 }
