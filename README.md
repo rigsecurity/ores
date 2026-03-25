@@ -3,9 +3,13 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo-light.svg">
-    <img alt="ORES" src=".github/assets/logo-dark.svg" width="240">
+    <img alt="ORES" src=".github/assets/logo-dark.svg" width="44">
   </picture>
-  <br><br>
+</p>
+
+<h1 align="center">ORES</h1>
+
+<p align="center">
   <strong>Open Risk Evaluation & Scoring</strong><br>
   <em>Because "it depends" is not a risk score.</em>
   <br><br>
@@ -31,14 +35,14 @@ Think of it as the **credit score for cybersecurity risk**. You wouldn't trust a
 
 ```text
 
-                     ┌─────────────┐
+                    ┌─────────────┐
    CVSS 9.8 ───────▶│             │
    EPSS 0.95 ──────▶│             │
    KEV: true ──────▶│    ORES     │──────▶ Score: 89 (High)
    Asset: crown ───▶│   Engine    │──────▶ Confidence: 1.0
    Blast: 142 ─────▶│             │──────▶ "Here's exactly why."
    Patch: 45d ─────▶│             │
-                     └─────────────┘
+                    └─────────────┘
 
    Feed it what you have. More signals = more confidence.
    Same input = same score. Always. Everywhere. Fight me.
