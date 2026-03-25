@@ -52,9 +52,9 @@ func main() {
 
 	// Middleware options.
 	opts := muxOptions{
-		maxBodyBytes: envInt64("ORES_MAX_REQUEST_BYTES", defaultMaxBodyBytes),
-		rateLimitRPS: envFloat64("ORES_RATE_LIMIT", 0),
-		rateBurst:    int(envInt64("ORES_RATE_BURST", 0)),
+		maxBodyBytes: envInt64(logger, "ORES_MAX_REQUEST_BYTES", defaultMaxBodyBytes),
+		rateLimitRPS: envFloat64(logger, "ORES_RATE_LIMIT", 0),
+		rateBurst:    int(envInt64(logger, "ORES_RATE_BURST", 0)),
 		tlsEnabled:   tlsEnabled,
 		corsOrigins:  parseCORSOrigins(os.Getenv("ORES_CORS_ORIGINS")),
 	}
@@ -123,8 +123,9 @@ func main() {
 	logger.Info("oresd stopped")
 }
 
-// envInt64 reads an environment variable as int64, returning def if unset or unparseable.
-func envInt64(key string, def int64) int64 {
+// envInt64 reads an environment variable as int64, returning def if unset.
+// Logs a warning if the value is set but unparseable.
+func envInt64(logger *slog.Logger, key string, def int64) int64 {
 	v := os.Getenv(key)
 	if v == "" {
 		return def
@@ -132,14 +133,17 @@ func envInt64(key string, def int64) int64 {
 
 	n, err := strconv.ParseInt(v, 10, 64)
 	if err != nil {
+		logger.Warn("invalid env var, using default", "key", key, "value", v, "default", def, "err", err)
+
 		return def
 	}
 
 	return n
 }
 
-// envFloat64 reads an environment variable as float64, returning def if unset or unparseable.
-func envFloat64(key string, def float64) float64 {
+// envFloat64 reads an environment variable as float64, returning def if unset.
+// Logs a warning if the value is set but unparseable.
+func envFloat64(logger *slog.Logger, key string, def float64) float64 {
 	v := os.Getenv(key)
 	if v == "" {
 		return def
@@ -147,6 +151,8 @@ func envFloat64(key string, def float64) float64 {
 
 	n, err := strconv.ParseFloat(v, 64)
 	if err != nil {
+		logger.Warn("invalid env var, using default", "key", key, "value", v, "default", def, "err", err)
+
 		return def
 	}
 

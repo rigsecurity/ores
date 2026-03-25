@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -99,10 +100,10 @@ func maxBodyMiddleware(limit int64, next http.Handler) http.Handler {
 	})
 }
 
-// ipLimiter pairs a rate limiter with a last-seen timestamp for per-IP tracking.
+// ipLimiter pairs a rate limiter with an atomic last-seen unix timestamp for per-IP tracking.
 type ipLimiter struct {
 	limiter  *rate.Limiter
-	lastSeen time.Time
+	lastSeen atomic.Int64 // unix timestamp
 }
 
 // rateLimiterStore manages per-IP rate limiters with automatic cleanup of idle entries.
@@ -110,6 +111,7 @@ type rateLimiterStore struct {
 	limiters sync.Map
 	rps      rate.Limit
 	burst    int
+	done     chan struct{}
 }
 
 // cleanupInterval is how often stale IP entries are evicted.
@@ -119,10 +121,12 @@ const cleanupInterval = 5 * time.Minute
 const idleTimeout = 10 * time.Minute
 
 // newRateLimiterStore creates a store and starts a background cleanup goroutine.
+// Close the returned store's done channel to stop the cleanup goroutine.
 func newRateLimiterStore(rps float64, burst int) *rateLimiterStore {
 	s := &rateLimiterStore{
 		rps:   rate.Limit(rps),
 		burst: burst,
+		done:  make(chan struct{}),
 	}
 
 	go s.cleanup()
@@ -132,37 +136,47 @@ func newRateLimiterStore(rps float64, burst int) *rateLimiterStore {
 
 // get returns the rate limiter for the given IP, creating one if necessary.
 func (s *rateLimiterStore) get(ip string) *rate.Limiter {
-	now := time.Now()
+	now := time.Now().Unix()
 
 	if v, ok := s.limiters.Load(ip); ok {
 		entry := v.(*ipLimiter)
-		entry.lastSeen = now
+		entry.lastSeen.Store(now)
 
 		return entry.limiter
 	}
 
 	limiter := rate.NewLimiter(s.rps, s.burst)
-	s.limiters.Store(ip, &ipLimiter{limiter: limiter, lastSeen: now})
+
+	entry := &ipLimiter{limiter: limiter}
+	entry.lastSeen.Store(now)
+
+	s.limiters.Store(ip, entry)
 
 	return limiter
 }
 
 // cleanup periodically evicts IP entries that have been idle longer than idleTimeout.
+// It stops when the done channel is closed.
 func (s *rateLimiterStore) cleanup() {
 	ticker := time.NewTicker(cleanupInterval)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		cutoff := time.Now().Add(-idleTimeout)
+	for {
+		select {
+		case <-s.done:
+			return
+		case <-ticker.C:
+			cutoff := time.Now().Add(-idleTimeout).Unix()
 
-		s.limiters.Range(func(key, value any) bool {
-			entry := value.(*ipLimiter)
-			if entry.lastSeen.Before(cutoff) {
-				s.limiters.Delete(key)
-			}
+			s.limiters.Range(func(key, value any) bool {
+				entry := value.(*ipLimiter)
+				if entry.lastSeen.Load() < cutoff {
+					s.limiters.Delete(key)
+				}
 
-			return true
-		})
+				return true
+			})
+		}
 	}
 }
 
