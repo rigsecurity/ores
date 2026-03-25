@@ -1,0 +1,19 @@
+{
+  "name": "ORES Development",
+  "image": "mcr.microsoft.com/devcontainers/go:1.25",
+  "features": {
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.25"
+    }
+  },
+  "postCreateCommand": "go mod download && go install github.com/go-task/task/v3/cmd/task@latest && go install github.com/bufbuild/buf/cmd/buf@latest",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "bufbuild.vscode-buf"
+      ]
+    }
+  },
+  "forwardPorts": [8080]
+}

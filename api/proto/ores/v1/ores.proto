@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package ores.v1;
+
+option go_package = "github.com/rigsecurity/ores/gen/proto/ores/v1;oresv1";
+
+import "google/protobuf/struct.proto";
+
+service OresService {
+  rpc Evaluate(EvaluateRequest) returns (EvaluateResponse);
+  rpc ListSignals(ListSignalsRequest) returns (ListSignalsResponse);
+  rpc GetVersion(GetVersionRequest) returns (GetVersionResponse);
+}
+
+message EvaluateRequest {
+  string api_version = 1;
+  string kind = 2;
+  google.protobuf.Struct signals = 3;
+}
+
+message EvaluateResponse {
+  string api_version = 1;
+  string kind = 2;
+  int32 score = 3;
+  string label = 4;
+  string version = 5;
+  Explanation explanation = 6;
+}
+
+message Explanation {
+  int32 signals_provided = 1;
+  int32 signals_used = 2;
+  int32 signals_unknown = 3;
+  repeated string unknown_signals = 4;
+  repeated string warnings = 5;
+  double confidence = 6;
+  repeated Factor factors = 7;
+}
+
+message Factor {
+  string name = 1;
+  int32 contribution = 2;
+  repeated string derived_from = 3;
+  string reasoning = 4;
+}
+
+message ListSignalsRequest {}
+
+message ListSignalsResponse {
+  repeated SignalDescriptor signals = 1;
+}
+
+message SignalDescriptor {
+  string name = 1;
+  string description = 2;
+  repeated string fields = 3;
+}
+
+message GetVersionRequest {}
+
+message GetVersionResponse {
+  string version = 1;
+}

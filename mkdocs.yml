@@ -1,0 +1,48 @@
+site_name: ORES — Open Risk Evaluation & Scoring
+site_url: https://rigsecurity.github.io/ores/
+repo_url: https://github.com/rigsecurity/ores
+repo_name: rigsecurity/ores
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: teal
+    accent: deep purple
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quickstart: getting-started/quickstart.md
+  - Concepts:
+    - Signals: concepts/signals.md
+    - Scoring: concepts/scoring.md
+    - Confidence: concepts/confidence.md
+  - Guides:
+    - CLI: guides/cli.md
+    - Daemon: guides/daemon.md
+    - WASM: guides/wasm.md
+    - Library: guides/library.md
+  - API:
+    - HTTP: api/http.md
+    - gRPC: api/grpc.md
+  - Contributing:
+    - Development: contributing/development.md
+    - Proposing Signals: contributing/signals.md
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - def_list
+  - attr_list

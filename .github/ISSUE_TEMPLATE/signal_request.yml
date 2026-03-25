@@ -1,0 +1,57 @@
+name: Signal Type Request
+description: Request a new signal type for risk scoring
+labels: ["signal", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ORES is built around extensible signals. Use this form to propose a new signal type
+        that should be collected and factored into risk scores.
+
+  - type: input
+    id: signal_name
+    attributes:
+      label: Signal Name
+      description: A short, descriptive name for the proposed signal (e.g., `geo_velocity`, `leaked_credential`).
+      placeholder: "my_signal_name"
+    validations:
+      required: true
+
+  - type: textarea
+    id: data_source
+    attributes:
+      label: Data Source
+      description: Where does this signal come from? (e.g., authentication logs, third-party threat feed, device fingerprint API)
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed_fields
+    attributes:
+      label: Proposed Fields
+      description: |
+        List the fields this signal would expose, with types and descriptions.
+        Use proto-style notation if helpful.
+      placeholder: |
+        string country_code = 1;   // ISO 3166-1 alpha-2 country code
+        double velocity_km_h = 2;  // km/h since last auth event
+    validations:
+      required: true
+
+  - type: textarea
+    id: risk_relevance
+    attributes:
+      label: Why It Matters for Risk Scoring
+      description: |
+        Explain how this signal helps differentiate low-risk from high-risk activity.
+        Include example scenarios where the signal would change a risk decision.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Links to data source docs, research, prior art, or other relevant context.
+    validations:
+      required: false

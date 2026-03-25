@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: bufbuild/buf-setup-action@v1
+      - run: buf generate
+      - uses: golangci/golangci-lint-action@v6
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: bufbuild/buf-setup-action@v1
+      - run: buf generate
+      - run: go test -race -coverprofile=coverage.txt ./...
+      - uses: codecov/codecov-action@v4
+        with:
+          file: coverage.txt
+
+  buf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-setup-action@v1
+      - run: buf lint
+      - run: buf breaking --against 'https://github.com/rigsecurity/ores.git#branch=main'
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: bufbuild/buf-setup-action@v1
+      - run: buf generate
+      - run: go build ./cmd/ores
+      - run: go build ./cmd/oresd
+      - run: GOOS=wasip1 GOARCH=wasm go build -o ores.wasm ./pkg/wasm

@@ -1,0 +1,41 @@
+name: Feature Request
+description: Propose a new feature or enhancement for ORES
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to improve ORES? Describe it below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: What problem are you trying to solve? What limitation or gap exists today?
+      placeholder: "I'm trying to do X but ORES currently doesn't support ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like, including any API or config changes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or workarounds you've considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, links, or screenshots relevant to this request.
+    validations:
+      required: false
