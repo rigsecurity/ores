@@ -1,15 +1,11 @@
 <p align="center">
   <br>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo-light.svg">
-    <img alt="ORES" src=".github/assets/logo-dark.svg" width="44">
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo-light.png">
+    <img alt="ORES" src=".github/assets/logo-dark.png" width="280">
   </picture>
-</p>
-
-<h1 align="center">ORES</h1>
-
-<p align="center">
+  <br><br>
   <strong>Open Risk Evaluation & Scoring</strong><br>
   <em>Because "it depends" is not a risk score.</em>
   <br><br>
@@ -145,7 +141,7 @@ Keep it. Use ORES as a universal baseline for cross-tool comparison. Your model 
 
 ## Project Status
 
-ORES is in **preview** (`v0.1.0-preview`). The architecture is production-ready; the scoring model weights are being refined through [ML simulation research](https://github.com/rigsecurity/ml-playground/pull/4). The API surface is stable. The model will evolve - that's what semantic versioning is for.
+ORES is in **preview** (`v0.1.0-preview`). The architecture is production-ready; the scoring model weights are being refined through ongoing ML simulation research. The API surface is stable. The model will evolve - that's what semantic versioning is for.
 
 **What's here today:**
 - Core engine with 8 signal types
