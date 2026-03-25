@@ -155,3 +155,63 @@ func TestRateLimitMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rRec.Code)
 	})
 }
+
+func TestCORSMiddleware(t *testing.T) {
+	t.Run("no origins disables CORS", func(t *testing.T) {
+		handler := corsMiddleware(nil, okHandler)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Origin", "https://example.com")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"))
+	})
+
+	t.Run("wildcard allows any origin", func(t *testing.T) {
+		handler := corsMiddleware([]string{"*"}, okHandler)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Origin", "https://anything.example.com")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "*", rec.Header().Get("Access-Control-Allow-Origin"))
+	})
+
+	t.Run("specific origin matched", func(t *testing.T) {
+		handler := corsMiddleware([]string{"https://app.example.com"}, okHandler)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Origin", "https://app.example.com")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "https://app.example.com", rec.Header().Get("Access-Control-Allow-Origin"))
+	})
+
+	t.Run("non-matching origin gets no CORS headers", func(t *testing.T) {
+		handler := corsMiddleware([]string{"https://allowed.example.com"}, okHandler)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Origin", "https://evil.example.com")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"))
+	})
+
+	t.Run("preflight returns 204 with all headers", func(t *testing.T) {
+		handler := corsMiddleware([]string{"https://app.example.com"}, okHandler)
+		req := httptest.NewRequest(http.MethodOptions, "/", nil)
+		req.Header.Set("Origin", "https://app.example.com")
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusNoContent, rec.Code)
+		assert.Equal(t, "https://app.example.com", rec.Header().Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, "POST, GET, OPTIONS", rec.Header().Get("Access-Control-Allow-Methods"))
+		assert.Equal(t, "Content-Type, Connect-Protocol-Version, Grpc-Timeout", rec.Header().Get("Access-Control-Allow-Headers"))
+		assert.Equal(t, "86400", rec.Header().Get("Access-Control-Max-Age"))
+	})
+}

@@ -133,3 +133,58 @@ func rateLimitMiddleware(rps float64, burst int, next http.Handler) http.Handler
 		next.ServeHTTP(w, r)
 	})
 }
+
+// corsMiddleware adds CORS headers for the specified allowed origins.
+// If origins is nil or empty, CORS is disabled and next is returned directly.
+// A wildcard "*" in the origins list allows any origin.
+func corsMiddleware(origins []string, next http.Handler) http.Handler {
+	if len(origins) == 0 {
+		return next
+	}
+
+	wildcard := false
+	allowed := make(map[string]struct{}, len(origins))
+
+	for _, o := range origins {
+		if o == "*" {
+			wildcard = true
+		}
+
+		allowed[o] = struct{}{}
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		var matchedOrigin string
+
+		switch {
+		case wildcard:
+			matchedOrigin = "*"
+		case origin != "":
+			if _, ok := allowed[origin]; ok {
+				matchedOrigin = origin
+			}
+		}
+
+		if matchedOrigin == "" {
+			next.ServeHTTP(w, r)
+
+			return
+		}
+
+		w.Header().Set("Access-Control-Allow-Origin", matchedOrigin)
+
+		// Handle preflight OPTIONS requests.
+		if r.Method == http.MethodOptions {
+			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Connect-Protocol-Version, Grpc-Timeout")
+			w.Header().Set("Access-Control-Max-Age", "86400")
+			w.WriteHeader(http.StatusNoContent)
+
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
