@@ -8,20 +8,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newSignalsCmd() *cobra.Command {
+func newSignalsCmd(e *engine.Engine) *cobra.Command {
 	return &cobra.Command{
 		Use:   "signals",
 		Short: "List all recognized signal types",
 		Long:  "List all signal types recognized by the ORES engine, including their fields.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runSignals(cmd.OutOrStdout())
+			return runSignals(e, cmd.OutOrStdout())
 		},
 	}
 }
 
-func runSignals(w io.Writer) error {
-	e := engine.New()
+func runSignals(e *engine.Engine, w io.Writer) error {
 	descs := e.Signals()
 
 	tw := newTabWriter(w)

@@ -129,7 +129,8 @@ Evaluate a set of risk signals and produce a composite score with an explanation
   "kind": "EvaluationResult",
   "score": 87,
   "label": "high",
-  "version": "0.1.0-preview",
+  "mode": "weighted",
+  "version": "0.2.0",
   "explanation": {
     "signalsProvided": 5,
     "signalsUsed": 5,
@@ -284,7 +285,7 @@ Get the model version string. Useful for pinning results to a specific model rev
 
     ```json
     {
-      "version": "0.1.0-preview"
+      "version": "0.2.0"
     }
     ```
 

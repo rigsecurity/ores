@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/rigsecurity/ores/pkg/model"
+	"github.com/rigsecurity/ores/pkg/signals"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -211,4 +212,53 @@ func TestCalculateConfidenceHalfCoveragePerDimension(t *testing.T) {
 	// lateral_risk: 1/1 * 0.10 = 0.10
 	// Total: 0.65
 	assert.InDelta(t, 0.65, confidence, 0.0001)
+}
+
+func TestB4Axes(t *testing.T) {
+	axes := model.B4Axes()
+	require.Len(t, axes, 3, "should have exactly 3 B4 axes")
+
+	// Verify names match the factor names in the model.
+	expectedNames := []string{"environmental_adjust", "blast_radius_adjust", "remediation_adjust"}
+	for i, axis := range axes {
+		assert.Equal(t, expectedNames[i], axis.Name)
+		assert.NotEmpty(t, axis.Signals, "axis %s must have signals", axis.Name)
+	}
+}
+
+func TestB4ContextSignals(t *testing.T) {
+	signals := model.B4ContextSignals()
+	assert.True(t, signals["asset"], "asset should be a B4 context signal")
+	assert.True(t, signals["blast_radius"], "blast_radius should be a B4 context signal")
+	assert.True(t, signals["patch"], "patch should be a B4 context signal")
+	assert.True(t, signals["compliance"], "compliance should be a B4 context signal")
+	assert.False(t, signals["cvss"], "cvss should NOT be a B4 context signal")
+	assert.False(t, signals["epss"], "epss should NOT be a B4 context signal")
+	assert.False(t, signals["nist"], "nist should NOT be a B4 context signal")
+	assert.False(t, signals["threat_intel"], "threat_intel should NOT be a B4 context signal")
+}
+
+func TestModelScoreRouting(t *testing.T) {
+	m := model.New()
+
+	t.Run("nil findings routes to weighted", func(t *testing.T) {
+		result, err := m.Score(nil, []signals.NormalizedSignal{{"severity": 0.5}})
+		require.NoError(t, err)
+		// Weighted mode always produces 5 factors.
+		assert.Len(t, result.Factors, 5)
+	})
+
+	t.Run("empty findings routes to weighted", func(t *testing.T) {
+		result, err := m.Score([]float64{}, []signals.NormalizedSignal{{"severity": 0.5}})
+		require.NoError(t, err)
+		assert.Len(t, result.Factors, 5)
+	})
+
+	t.Run("non-empty findings routes to B4", func(t *testing.T) {
+		result, err := m.Score([]float64{7.0}, nil)
+		require.NoError(t, err)
+		// B4 mode always produces 5 factors with these names.
+		assert.Len(t, result.Factors, 5)
+		assert.Equal(t, "base_finding", result.Factors[0].Name)
+	})
 }

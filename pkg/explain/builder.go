@@ -57,31 +57,30 @@ func Build(
 
 	signalsUsed := len(provided)
 
-	if unknownSignals == nil {
-		unknownSignals = []string{}
-	}
-
-	if warnings == nil {
-		warnings = []string{}
-	}
-
 	return score.Explanation{
 		SignalsProvided: totalProvided,
 		SignalsUsed:     signalsUsed,
-		SignalsUnknown:  len(unknownSignals),
-		UnknownSignals:  unknownSignals,
-		Warnings:        warnings,
+		SignalsUnknown:  len(emptyIfNil(unknownSignals)),
+		UnknownSignals:  emptyIfNil(unknownSignals),
+		Warnings:        emptyIfNil(warnings),
 		Confidence:      confidence,
 		Factors:         factors,
 	}
 }
 
-var b4FactorSignals = map[string][]string{
-	"base_finding":         {},
-	"additional_findings":  {},
-	"environmental_adjust": {"asset"},
-	"blast_radius_adjust":  {"blast_radius"},
-	"remediation_adjust":   {"patch", "compliance"},
+// b4FactorSignals is derived from model.B4Axes — the single source of truth for
+// which signals feed each B4 adjustment axis.
+var b4FactorSignals = buildB4FactorSignals()
+
+func buildB4FactorSignals() map[string][]string {
+	m := map[string][]string{
+		"base_finding":        {},
+		"additional_findings": {},
+	}
+	for _, axis := range model.B4Axes() {
+		m[axis.Name] = axis.Signals
+	}
+	return m
 }
 
 var b4ReasoningTemplates = map[string]string{
@@ -114,20 +113,13 @@ func BuildB4(
 		})
 	}
 
-	if unknownSignals == nil {
-		unknownSignals = []string{}
-	}
-	if warnings == nil {
-		warnings = []string{}
-	}
-
 	return score.Explanation{
 		SignalsProvided: len(provided),
 		SignalsUsed:     len(provided),
-		SignalsUnknown:  len(unknownSignals),
+		SignalsUnknown:  len(emptyIfNil(unknownSignals)),
 		FindingsCount:   findingsCount,
-		UnknownSignals:  unknownSignals,
-		Warnings:        warnings,
+		UnknownSignals:  emptyIfNil(unknownSignals),
+		Warnings:        emptyIfNil(warnings),
 		Confidence:      confidence,
 		Factors:         factors,
 	}
@@ -203,4 +195,13 @@ func generateReasoning(dimName string, rawScore float64) string {
 	}
 
 	return fmt.Sprintf("%s (%s impact: %.0f%%)", template, level, rawScore*100)
+}
+
+// emptyIfNil returns s if non-nil, otherwise an empty slice.
+// This ensures JSON serialization produces [] instead of null.
+func emptyIfNil(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
 }

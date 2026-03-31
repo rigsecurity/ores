@@ -149,31 +149,31 @@ Here is the factor breakdown for a vulnerability scored at <span class="ores-sco
 ```json
 "factors": [
   {
-    "factor": "base_vulnerability",
+    "name": "base_vulnerability",
     "contribution": 26,
     "derived_from": ["cvss"],
     "reasoning": "Base severity score from vulnerability data (high impact: 88%)"
   },
   {
-    "factor": "exploitability",
+    "name": "exploitability",
     "contribution": 22,
     "derived_from": ["epss", "threat_intel"],
     "reasoning": "Likelihood of exploitation based on threat landscape (high impact: 93%)"
   },
   {
-    "factor": "environmental_context",
+    "name": "environmental_context",
     "contribution": 17,
     "derived_from": ["asset"],
     "reasoning": "Environmental risk based on asset criticality and exposure (high impact: 74%)"
   },
   {
-    "factor": "remediation_gap",
+    "name": "remediation_gap",
     "contribution": 13,
     "derived_from": ["patch"],
     "reasoning": "Remediation posture based on patch availability and compliance (moderate impact: 58%)"
   },
   {
-    "factor": "lateral_risk",
+    "name": "lateral_risk",
     "contribution": 9,
     "derived_from": ["defaults"],
     "reasoning": "Lateral movement potential based on blast radius (moderate impact: 30%)"

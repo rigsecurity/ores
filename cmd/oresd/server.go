@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -35,7 +36,7 @@ func (h *OresHandler) Evaluate(
 
 	result, err := h.engine.Evaluate(ctx, engineReq)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return nil, connect.NewError(classifyError(err), err)
 	}
 
 	return connect.NewResponse(&oresv1.EvaluateResponse{
@@ -118,4 +119,14 @@ func explanationToProto(e score.Explanation) *oresv1.Explanation {
 // All values passed here are bounded small integers (scores, counts) that fit in int32.
 func safeInt32(n int) int32 {
 	return int32(n) //nolint:gosec // callers ensure value is in int32 range
+}
+
+// classifyError maps engine errors to the appropriate Connect error code.
+// Validation errors (bad input) → CodeInvalidArgument; internal errors → CodeInternal.
+func classifyError(err error) connect.Code {
+	msg := err.Error()
+	if strings.HasPrefix(msg, "invalid request:") || strings.HasPrefix(msg, "no valid signals:") {
+		return connect.CodeInvalidArgument
+	}
+	return connect.CodeInternal
 }

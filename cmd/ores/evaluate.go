@@ -15,7 +15,7 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
-func newEvaluateCmd() *cobra.Command {
+func newEvaluateCmd(e *engine.Engine) *cobra.Command {
 	var (
 		filePath     string
 		outputFormat string
@@ -35,12 +35,15 @@ Examples:
   ores evaluate -f signals.json -o table`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runEvaluate(filePath, outputFormat, cmd.OutOrStdout())
+			return runEvaluate(e, filePath, outputFormat, cmd.OutOrStdout())
 		},
 	}
 
 	cmd.Flags().StringVarP(&filePath, "file", "f", "", "Input file (JSON or YAML); defaults to stdin")
 	cmd.Flags().StringVarP(&outputFormat, "output", "o", "json", "Output format: json, yaml, or table")
+	_ = cmd.RegisterFlagCompletionFunc("output", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{"json", "yaml", "table"}, cobra.ShellCompDirectiveNoFileComp
+	})
 
 	return cmd
 }
@@ -48,7 +51,7 @@ Examples:
 // runEvaluate reads input from filePath (or stdin when filePath is empty),
 // calls the engine, and writes the result to w. It is a named function so
 // evaluate_test.go can invoke it directly.
-func runEvaluate(filePath, outputFormat string, w io.Writer) error {
+func runEvaluate(e *engine.Engine, filePath, outputFormat string, w io.Writer) error {
 	data, err := readInput(filePath)
 	if err != nil {
 		return fmt.Errorf("reading input: %w", err)
@@ -58,8 +61,6 @@ func runEvaluate(filePath, outputFormat string, w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("parsing request: %w", err)
 	}
-
-	e := engine.New()
 
 	result, err := e.Evaluate(context.Background(), req)
 	if err != nil {
@@ -139,11 +140,11 @@ func writeJSON(result *score.EvaluationResult, w io.Writer) error {
 }
 
 func writeYAML(result *score.EvaluationResult, w io.Writer) error {
-	if err := yaml.NewEncoder(w).Encode(result); err != nil {
+	enc := yaml.NewEncoder(w)
+	if err := enc.Encode(result); err != nil {
 		return fmt.Errorf("encoding YAML: %w", err)
 	}
-
-	return nil
+	return enc.Close()
 }
 
 // tabWriter wraps tabwriter.Writer and accumulates the first write error so

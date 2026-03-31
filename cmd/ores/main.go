@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/rigsecurity/ores/pkg/engine"
 	"github.com/spf13/cobra"
 )
 
 func newRootCmd() *cobra.Command {
+	e := engine.New()
+
 	cmd := &cobra.Command{
 		Use:   "ores",
 		Short: "ORES — Open Risk Evaluation & Scoring",
@@ -16,9 +19,9 @@ func newRootCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		newEvaluateCmd(),
-		newSignalsCmd(),
-		newVersionCmd(),
+		newEvaluateCmd(e),
+		newSignalsCmd(e),
+		newVersionCmd(e),
 	)
 
 	return cmd

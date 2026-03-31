@@ -183,3 +183,20 @@ func TestBlastRadiusFields(t *testing.T) {
 	assert.Contains(t, fields, "affected_systems")
 	assert.Contains(t, fields, "lateral_movement_possible")
 }
+
+func TestBlastRadiusBoundary(t *testing.T) {
+	b := &parsers.BlastRadius{}
+
+	t.Run("affected_systems=2 is log boundary", func(t *testing.T) {
+		ns, err := b.Normalize(map[string]any{"affected_systems": float64(2)})
+		require.NoError(t, err)
+		// log10(2) / log10(1000) ≈ 0.1003
+		assert.InDelta(t, 0.1003, ns["blast_scope"], 0.001)
+	})
+
+	t.Run("affected_systems=1.5 below boundary", func(t *testing.T) {
+		ns, err := b.Normalize(map[string]any{"affected_systems": 1.5})
+		require.NoError(t, err)
+		assert.InDelta(t, 0.0, ns["blast_scope"], 0.001, "below 2 should produce 0")
+	})
+}

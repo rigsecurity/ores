@@ -122,7 +122,7 @@ Returns descriptors for all registered signal types, sorted alphabetically by na
 func (e *Engine) Version() string
 ```
 
-Returns the model version string (e.g., `"0.1.0-preview"`).
+Returns the model version string (e.g., `"0.2.0"`).
 
 ---
 

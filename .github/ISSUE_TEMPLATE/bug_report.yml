@@ -48,7 +48,7 @@ body:
     attributes:
       label: ORES Version
       description: Output of `ores version` or the release tag.
-      placeholder: "v0.1.0"
+      placeholder: "v0.2.0"
     validations:
       required: true
 

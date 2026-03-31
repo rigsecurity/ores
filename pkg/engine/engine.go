@@ -14,12 +14,10 @@ import (
 	"github.com/rigsecurity/ores/pkg/signals/parsers"
 )
 
-// contextSignals is the set of signal names used for B4 context adjustment.
-// Severity signals (cvss, epss, nist, threat_intel) are intentionally excluded
-// because B4 mode derives severity from the findings slice, not signal inputs.
-var contextSignals = map[string]bool{
-	"asset": true, "blast_radius": true, "compliance": true, "patch": true,
-}
+// contextSignals is derived from model.B4ContextSignals — the single source of truth
+// for which signal names are used in B4 context adjustment. Severity signals are
+// intentionally excluded because B4 mode derives severity from the findings slice.
+var contextSignals = model.B4ContextSignals()
 
 // Engine is the main evaluation pipeline.
 type Engine struct {
@@ -51,17 +49,20 @@ func (e *Engine) Evaluate(_ context.Context, req *score.EvaluationRequest) (*sco
 	return e.evaluateWeighted(req)
 }
 
-// evaluateB4 handles requests with findings. Only context signals (asset,
-// blast_radius, compliance, patch) are processed; severity signals are ignored.
-// It is valid to supply findings with no context signals — the adjustment axes
-// will use their neutral defaults (confidence → 0.0).
-func (e *Engine) evaluateB4(req *score.EvaluationRequest) (*score.EvaluationResult, error) {
-	var (
-		normalized     []signals.NormalizedSignal
-		provided       = make(map[string]bool)
-		unknownSignals []string
-		warnings       []string
-	)
+// processedSignals holds the output of parsing and normalizing a request's signals.
+type processedSignals struct {
+	normalized     []signals.NormalizedSignal
+	provided       map[string]bool
+	unknownSignals []string
+	warnings       []string
+}
+
+// processSignals parses, validates, and normalizes signals from a request.
+// When accept is non-nil, only signal names for which accept returns true are
+// processed; the rest are silently skipped. Signal names are sorted for
+// deterministic output.
+func (e *Engine) processSignals(req *score.EvaluationRequest, accept func(string) bool) processedSignals {
+	ps := processedSignals{provided: make(map[string]bool)}
 
 	// Sort signal names for deterministic processing.
 	names := make([]string, 0, len(req.Signals))
@@ -71,8 +72,7 @@ func (e *Engine) evaluateB4(req *score.EvaluationRequest) (*score.EvaluationResu
 	sort.Strings(names)
 
 	for _, name := range names {
-		// Skip severity signals — B4 derives severity from findings.
-		if !contextSignals[name] {
+		if accept != nil && !accept(name) {
 			continue
 		}
 
@@ -80,33 +80,42 @@ func (e *Engine) evaluateB4(req *score.EvaluationRequest) (*score.EvaluationResu
 
 		sig, ok := e.registry.Get(name)
 		if !ok {
-			unknownSignals = append(unknownSignals, name)
+			ps.unknownSignals = append(ps.unknownSignals, name)
 			continue
 		}
 
 		if err := sig.Validate(raw); err != nil {
-			warnings = append(warnings, fmt.Sprintf("%s: %s", name, err.Error()))
+			ps.warnings = append(ps.warnings, fmt.Sprintf("%s: %s", name, err.Error()))
 			continue
 		}
 
 		norm, err := sig.Normalize(raw)
 		if err != nil {
-			warnings = append(warnings, fmt.Sprintf("%s: normalization failed: %s", name, err.Error()))
+			ps.warnings = append(ps.warnings, fmt.Sprintf("%s: normalization failed: %s", name, err.Error()))
 			continue
 		}
 
-		normalized = append(normalized, norm)
-		provided[name] = true
+		ps.normalized = append(ps.normalized, norm)
+		ps.provided[name] = true
 	}
 
-	// B4 does not require context signals — findings alone are valid.
-	result, err := e.model.Score(req.Findings, normalized)
+	return ps
+}
+
+// evaluateB4 handles requests with findings. Only context signals (asset,
+// blast_radius, compliance, patch) are processed; severity signals are ignored.
+// It is valid to supply findings with no context signals — the adjustment axes
+// will use their neutral defaults (confidence → 0.0).
+func (e *Engine) evaluateB4(req *score.EvaluationRequest) (*score.EvaluationResult, error) {
+	ps := e.processSignals(req, func(name string) bool { return contextSignals[name] })
+
+	result, err := e.model.Score(req.Findings, ps.normalized)
 	if err != nil {
 		return nil, fmt.Errorf("scoring failed: %w", err)
 	}
 
-	confidence := model.CalculateB4Confidence(provided)
-	explanation := explain.BuildB4(result.Factors, provided, unknownSignals, warnings, confidence, len(req.Findings))
+	confidence := model.CalculateB4Confidence(ps.provided)
+	explanation := explain.BuildB4(result.Factors, ps.provided, ps.unknownSignals, ps.warnings, confidence, len(req.Findings))
 
 	return &score.EvaluationResult{
 		APIVersion:  score.APIVersion,
@@ -122,59 +131,19 @@ func (e *Engine) evaluateB4(req *score.EvaluationRequest) (*score.EvaluationResu
 // evaluateWeighted handles requests without findings using the weighted
 // multi-dimension scoring model.
 func (e *Engine) evaluateWeighted(req *score.EvaluationRequest) (*score.EvaluationResult, error) {
-	var (
-		normalized     []signals.NormalizedSignal
-		provided       = make(map[string]bool)
-		unknownSignals []string
-		warnings       []string
-	)
+	ps := e.processSignals(req, nil)
 
-	// Sort signal names for deterministic processing.
-	names := make([]string, 0, len(req.Signals))
-	for name := range req.Signals {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-
-	for _, name := range names {
-		raw := req.Signals[name]
-
-		sig, ok := e.registry.Get(name)
-		if !ok {
-			unknownSignals = append(unknownSignals, name)
-
-			continue
-		}
-
-		if err := sig.Validate(raw); err != nil {
-			warnings = append(warnings, fmt.Sprintf("%s: %s", name, err.Error()))
-
-			continue
-		}
-
-		norm, err := sig.Normalize(raw)
-		if err != nil {
-			warnings = append(warnings, fmt.Sprintf("%s: normalization failed: %s", name, err.Error()))
-
-			continue
-		}
-
-		normalized = append(normalized, norm)
-		provided[name] = true
-	}
-
-	if len(provided) == 0 {
+	if len(ps.provided) == 0 {
 		return nil, fmt.Errorf("no valid signals: all %d signals were invalid or unknown", len(req.Signals))
 	}
 
-	result, err := e.model.Score(nil, normalized)
+	result, err := e.model.Score(nil, ps.normalized)
 	if err != nil {
 		return nil, fmt.Errorf("scoring failed: %w", err)
 	}
 
-	confidence := model.CalculateConfidence(model.DefaultDimensions(), provided)
-	explanation := explain.Build(result.Factors, provided, unknownSignals, warnings, confidence, len(req.Signals))
+	confidence := model.CalculateConfidence(model.DefaultDimensions(), ps.provided)
+	explanation := explain.Build(result.Factors, ps.provided, ps.unknownSignals, ps.warnings, confidence, len(req.Signals))
 
 	return &score.EvaluationResult{
 		APIVersion:  score.APIVersion,

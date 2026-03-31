@@ -54,22 +54,41 @@ func CalculateConfidence(dims []DimensionDef, provided map[string]bool) float64 
 	return math.Round(total*10000) / 10000
 }
 
-// b4Axes defines the three adjustment axes for B4 confidence calculation.
-var b4Axes = []struct {
-	signals []string
-}{
-	{signals: []string{"asset"}},               // environmental axis
-	{signals: []string{"blast_radius"}},        // blast radius axis
-	{signals: []string{"patch", "compliance"}}, // remediation axis
+// B4Axis describes one B4 adjustment axis and the signals that feed it.
+type B4Axis struct {
+	Name    string
+	Signals []string
+}
+
+// B4Axes returns the three adjustment axes for B4 mode.
+// This is the single source of truth for which signals are used in B4 context adjustment.
+func B4Axes() []B4Axis {
+	return []B4Axis{
+		{Name: "environmental_adjust", Signals: []string{"asset"}},
+		{Name: "blast_radius_adjust", Signals: []string{"blast_radius"}},
+		{Name: "remediation_adjust", Signals: []string{"patch", "compliance"}},
+	}
+}
+
+// B4ContextSignals returns the set of signal names used in B4 context adjustment.
+func B4ContextSignals() map[string]bool {
+	m := make(map[string]bool)
+	for _, axis := range B4Axes() {
+		for _, sig := range axis.Signals {
+			m[sig] = true
+		}
+	}
+	return m
 }
 
 // CalculateB4Confidence returns a value in [0.0, 1.0] representing how many of
 // the three B4 adjustment axes have at least one signal provided.
 func CalculateB4Confidence(provided map[string]bool) float64 {
+	axes := B4Axes()
 	covered := 0
 
-	for _, axis := range b4Axes {
-		for _, sig := range axis.signals {
+	for _, axis := range axes {
+		for _, sig := range axis.Signals {
 			if provided[sig] {
 				covered++
 				break
@@ -77,10 +96,10 @@ func CalculateB4Confidence(provided map[string]bool) float64 {
 		}
 	}
 
-	if len(b4Axes) == 0 {
+	if len(axes) == 0 {
 		return 0
 	}
 
-	total := float64(covered) / float64(len(b4Axes))
+	total := float64(covered) / float64(len(axes))
 	return math.Round(total*10000) / 10000
 }

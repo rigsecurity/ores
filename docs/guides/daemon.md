@@ -230,6 +230,7 @@ curl -s -X POST http://localhost:8080/ores.v1.OresService/Evaluate \
   "kind": "EvaluationResult",
   "score": 87,
   "label": "high",
+  "mode": "weighted",
   "version": "0.2.0",
   "explanation": {
     "signalsProvided": 4,

@@ -360,7 +360,7 @@ All three use the same engine. Same input = same score.
 
 ## Status
 
-ORES is in **preview** (`v0.1.0-preview`). The architecture and API surface are stable.
+ORES is in **preview** (`v0.2.0`). The architecture and API surface are stable.
 Scoring model weights are being refined through ML research.
 
 **Shipping:** 8 signal types, CLI + daemon + WASM, full test suite, CI/CD with multi-platform releases and Cosign signing.

@@ -3,7 +3,6 @@ package model
 import (
 	"maps"
 	"math"
-	"sort"
 
 	"github.com/rigsecurity/ores/pkg/signals"
 )
@@ -32,7 +31,7 @@ func New() *Model {
 
 // Version returns the model version string.
 func (m *Model) Version() string {
-	return modelVersion
+	return ModelVersion
 }
 
 // dimDefinition holds everything needed to compute one dimension's score.
@@ -167,36 +166,11 @@ func (m *Model) ScoreWeighted(normalized []signals.NormalizedSignal) (*ScoreResu
 	}
 
 	// Distribute integer contributions using the largest-remainder method.
-	// Floor each contribution, then award +1 to the dimensions with the largest remainders
-	// until the total equals the score.
-	floors := make([]int, len(dims))
-	remainders := make([]float64, len(dims))
-	floorSum := 0
-
+	floats := make([]float64, len(dims))
 	for i, d := range dims {
-		floors[i] = int(math.Floor(d.floatContrib))
-		remainders[i] = d.floatContrib - float64(floors[i])
-		floorSum += floors[i]
+		floats[i] = d.floatContrib
 	}
-
-	leftover := score - floorSum
-
-	// Build an index slice sorted by remainder descending.
-	indices := make([]int, len(dims))
-	for i := range indices {
-		indices[i] = i
-	}
-
-	sort.Slice(indices, func(a, b int) bool {
-		return remainders[indices[a]] > remainders[indices[b]]
-	})
-
-	contributions := make([]int, len(dims))
-	copy(contributions, floors)
-
-	for i := 0; i < leftover && i < len(indices); i++ {
-		contributions[indices[i]]++
-	}
+	contributions := distributeContributions(floats, score)
 
 	// Build result.
 	result := &ScoreResult{

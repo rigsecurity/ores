@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/rigsecurity/ores/pkg/engine"
+	"github.com/rigsecurity/ores/pkg/model"
 	"github.com/rigsecurity/ores/pkg/score"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func TestEngineEvaluate(t *testing.T) {
 	assert.GreaterOrEqual(t, result.Score, 0)
 	assert.LessOrEqual(t, result.Score, 100)
 	assert.NotEmpty(t, string(result.Label))
-	assert.Equal(t, "0.2.0", result.Version)
+	assert.Equal(t, model.ModelVersion, result.Version)
 	assert.Equal(t, "weighted", result.Mode)
 	assert.Greater(t, result.Explanation.Confidence, 0.0)
 
@@ -147,7 +148,7 @@ func TestEngineSignals(t *testing.T) {
 
 func TestEngineVersion(t *testing.T) {
 	e := engine.New()
-	assert.Equal(t, "0.2.0", e.Version())
+	assert.Equal(t, model.ModelVersion, e.Version())
 }
 
 func TestEngineEvaluateB4Mode(t *testing.T) {
@@ -155,8 +156,8 @@ func TestEngineEvaluateB4Mode(t *testing.T) {
 	req := b4Request(
 		[]float64{8.5, 6.0, 4.2},
 		map[string]any{
-			"asset":        map[string]any{"criticality": "high", "internet_facing": true},
-			"blast_radius": map[string]any{"affected_systems": 50, "lateral_movement_risk": "medium"},
+			"asset":        map[string]any{"criticality": "high", "network_exposure": true},
+			"blast_radius": map[string]any{"affected_systems": 50, "lateral_movement_possible": true},
 		},
 	)
 

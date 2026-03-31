@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -15,6 +18,7 @@ import (
 	oresv1 "github.com/rigsecurity/ores/gen/proto/ores/v1"
 	"github.com/rigsecurity/ores/gen/proto/ores/v1/oresv1connect"
 	"github.com/rigsecurity/ores/pkg/engine"
+	"github.com/rigsecurity/ores/pkg/model"
 )
 
 func newTestClient(t *testing.T) oresv1connect.OresServiceClient {
@@ -78,7 +82,7 @@ func TestGetVersionHandler(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp.Msg)
 
-	assert.Equal(t, "0.2.0", resp.Msg.Version)
+	assert.Equal(t, model.ModelVersion, resp.Msg.Version)
 }
 
 func TestEvaluateHandlerEmptySignals(t *testing.T) {
@@ -264,4 +268,90 @@ func TestEvaluateHandlerWeightedModeHasMode(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	assert.Equal(t, "weighted", resp.Msg.Mode)
+}
+
+func TestConcurrentEvaluate(t *testing.T) {
+	client := newTestClient(t)
+
+	signals, err := structpb.NewStruct(map[string]any{
+		"cvss": map[string]any{"base_score": 7.5},
+		"epss": map[string]any{"probability": 0.6},
+	})
+	require.NoError(t, err)
+
+	const goroutines = 20
+	errs := make(chan error, goroutines)
+
+	for range goroutines {
+		go func() {
+			resp, err := client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+				ApiVersion: "ores.dev/v1",
+				Kind:       "EvaluationRequest",
+				Signals:    signals,
+			}))
+			if err != nil {
+				errs <- err
+				return
+			}
+			if resp.Msg.Score < 0 || resp.Msg.Score > 100 {
+				errs <- fmt.Errorf("score out of range: %d", resp.Msg.Score)
+				return
+			}
+			errs <- nil
+		}()
+	}
+
+	for range goroutines {
+		err := <-errs
+		assert.NoError(t, err)
+	}
+}
+
+func TestRawHTTPEvaluate(t *testing.T) {
+	srv := newTestServer(t)
+
+	body := `{"api_version":"ores.dev/v1","kind":"EvaluationRequest","signals":{"cvss":{"base_score":7.5}}}`
+	resp, err := srv.Client().Post(
+		srv.URL+"/ores.v1.OresService/Evaluate",
+		"application/json",
+		strings.NewReader(body),
+	)
+	require.NoError(t, err)
+	defer resp.Body.Close() //nolint:errcheck // best-effort close in test
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result map[string]any
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	assert.NotNil(t, result["score"])
+	assert.NotNil(t, result["label"])
+	assert.NotNil(t, result["mode"])
+}
+
+func TestEvaluateHandlerIntegerSignalValues(t *testing.T) {
+	// Proto/structpb delivers all numbers as float64. This test verifies
+	// integer-valued signal fields survive the round-trip correctly.
+	client := newTestClient(t)
+
+	signals, err := structpb.NewStruct(map[string]any{
+		"blast_radius": map[string]any{
+			"affected_systems":          100, // integer, will become float64
+			"lateral_movement_possible": true,
+		},
+		"patch": map[string]any{
+			"patch_available": true,
+			"patch_age_days":  45, // integer
+		},
+	})
+	require.NoError(t, err)
+
+	resp, err := client.Evaluate(context.Background(), connect.NewRequest(&oresv1.EvaluateRequest{
+		ApiVersion: "ores.dev/v1",
+		Kind:       "EvaluationRequest",
+		Findings:   []float64{7.5},
+		Signals:    signals,
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "b4", resp.Msg.Mode)
+	assert.GreaterOrEqual(t, resp.Msg.Score, int32(0))
 }

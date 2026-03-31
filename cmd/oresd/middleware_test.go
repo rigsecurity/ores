@@ -276,3 +276,125 @@ func TestParseCORSOrigins(t *testing.T) {
 		assert.Equal(t, []string{"*"}, parseCORSOrigins(logger, "*"))
 	})
 }
+
+func TestParseCORSOriginsEdgeCases(t *testing.T) {
+	logger := slog.New(slog.DiscardHandler)
+
+	t.Run("wildcard with specific origins", func(t *testing.T) {
+		result := parseCORSOrigins(logger, "*, https://example.com")
+		assert.Contains(t, result, "*")
+		assert.Contains(t, result, "https://example.com")
+	})
+
+	t.Run("origin without scheme", func(t *testing.T) {
+		result := parseCORSOrigins(logger, "example.com")
+		assert.Equal(t, []string{"example.com"}, result)
+	})
+
+	t.Run("all empty parts", func(t *testing.T) {
+		result := parseCORSOrigins(logger, ", , , ")
+		assert.Nil(t, result)
+	})
+}
+
+func TestCORSMiddlewareNoOriginHeader(t *testing.T) {
+	handler := corsMiddleware([]string{"https://app.example.com"}, okHandler)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	// No Origin header set.
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"),
+		"no Origin header should produce no CORS response headers")
+}
+
+func TestApplyMiddlewareRateLimitDisabled(t *testing.T) {
+	opts := muxOptions{
+		maxBodyBytes: 1024,
+		rateLimitRPS: 0, // disabled
+	}
+	handler := applyMiddleware(okHandler, opts)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestApplyMiddlewareWithRateLimit(t *testing.T) {
+	opts := muxOptions{
+		maxBodyBytes: 1024,
+		rateLimitRPS: 100,
+		rateBurst:    10,
+	}
+	handler := applyMiddleware(okHandler, opts)
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = "10.0.0.50:9999"
+	handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestResponseRecorderFlush(t *testing.T) {
+	t.Run("delegates to flusher", func(t *testing.T) {
+		inner := httptest.NewRecorder() // implements http.Flusher
+		rr := &responseRecorder{ResponseWriter: inner, statusCode: http.StatusOK}
+		rr.Flush() // should not panic
+		assert.True(t, inner.Flushed)
+	})
+
+	t.Run("non-flusher is safe", func(_ *testing.T) {
+		// A ResponseWriter that does NOT implement http.Flusher.
+		nf := &nonFlusherWriter{}
+		rr := &responseRecorder{ResponseWriter: nf, statusCode: http.StatusOK}
+		rr.Flush() // should not panic
+	})
+}
+
+// nonFlusherWriter is an http.ResponseWriter that does not implement http.Flusher.
+type nonFlusherWriter struct{}
+
+func (n *nonFlusherWriter) Header() http.Header         { return http.Header{} }
+func (n *nonFlusherWriter) Write(b []byte) (int, error) { return len(b), nil }
+func (n *nonFlusherWriter) WriteHeader(_ int)           {}
+
+func TestEnvInt64(t *testing.T) {
+	logger := slog.New(slog.DiscardHandler)
+
+	t.Run("empty returns default", func(t *testing.T) {
+		t.Setenv("TEST_ENV_INT64", "")
+		assert.Equal(t, int64(42), envInt64(logger, "TEST_ENV_INT64", 42))
+	})
+
+	t.Run("valid value", func(t *testing.T) {
+		t.Setenv("TEST_ENV_INT64", "100")
+		assert.Equal(t, int64(100), envInt64(logger, "TEST_ENV_INT64", 42))
+	})
+
+	t.Run("invalid value returns default", func(t *testing.T) {
+		t.Setenv("TEST_ENV_INT64", "not_a_number")
+		assert.Equal(t, int64(42), envInt64(logger, "TEST_ENV_INT64", 42))
+	})
+
+	t.Run("unset returns default", func(t *testing.T) {
+		assert.Equal(t, int64(99), envInt64(logger, "UNSET_VAR_INT64_TEST", 99))
+	})
+}
+
+func TestEnvFloat64(t *testing.T) {
+	logger := slog.New(slog.DiscardHandler)
+
+	t.Run("empty returns default", func(t *testing.T) {
+		t.Setenv("TEST_ENV_FLOAT64", "")
+		assert.InDelta(t, 3.14, envFloat64(logger, "TEST_ENV_FLOAT64", 3.14), 0.001)
+	})
+
+	t.Run("valid value", func(t *testing.T) {
+		t.Setenv("TEST_ENV_FLOAT64", "2.718")
+		assert.InDelta(t, 2.718, envFloat64(logger, "TEST_ENV_FLOAT64", 3.14), 0.001)
+	})
+
+	t.Run("invalid value returns default", func(t *testing.T) {
+		t.Setenv("TEST_ENV_FLOAT64", "xyz")
+		assert.InDelta(t, 3.14, envFloat64(logger, "TEST_ENV_FLOAT64", 3.14), 0.001)
+	})
+}

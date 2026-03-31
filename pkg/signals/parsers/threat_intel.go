@@ -57,11 +57,13 @@ func (t *ThreatIntel) Validate(raw any) error {
 
 // Normalize converts raw ThreatIntel input to normalized factor values.
 func (t *ThreatIntel) Normalize(raw any) (signals.NormalizedSignal, error) {
+	m, err := toMap(raw)
+	if err != nil {
+		return nil, err
+	}
 	if err := t.Validate(raw); err != nil {
 		return nil, err
 	}
-
-	m := raw.(map[string]any)
 	ns := make(signals.NormalizedSignal)
 
 	if aeVal, ok := m["actively_exploited"]; ok {

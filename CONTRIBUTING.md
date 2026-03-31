@@ -52,7 +52,7 @@ git rebase --signoff HEAD~N
 
 | Tool | Minimum Version | Install |
 |------|----------------|---------|
-| Go | 1.25 | https://go.dev/dl/ |
+| Go | 1.24+ | https://go.dev/dl/ |
 | Task | 3.x | https://taskfile.dev/installation/ |
 | golangci-lint | 2.x | https://golangci-lint.run/welcome/install/ |
 | buf | latest | https://buf.build/docs/installation |
@@ -126,7 +126,7 @@ All new code must include tests. We target a minimum of 80% line coverage for ne
 
 - Use `assert` for non-fatal checks and `require` for fatal checks (where the test cannot continue on failure).
 - Name test functions `Test<Function>_<scenario>` when a function has multiple test cases.
-- Keep test helpers in `internal/testutil` so they can be shared across packages.
+- Keep test helpers local to the test file they serve. If a helper is needed by multiple packages, consider whether it belongs in a shared `_test.go` file within the package.
 
 ## Linting
 

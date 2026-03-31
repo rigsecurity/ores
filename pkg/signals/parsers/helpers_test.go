@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToFloat64(t *testing.T) {
@@ -17,6 +18,7 @@ func TestToFloat64(t *testing.T) {
 		{name: "float32", input: float32(2.5), want: 2.5, wantOK: true},
 		{name: "int", input: int(42), want: 42.0, wantOK: true},
 		{name: "int64", input: int64(100), want: 100.0, wantOK: true},
+		{name: "int32", input: int32(7), want: 7.0, wantOK: true},
 		{name: "zero float64", input: float64(0), want: 0.0, wantOK: true},
 		{name: "negative float64", input: float64(-1.5), want: -1.5, wantOK: true},
 		{name: "string", input: "not a number", want: 0, wantOK: false},
@@ -141,6 +143,34 @@ func TestToStringSlice(t *testing.T) {
 
 			if ok {
 				assert.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestToMap(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   any
+		wantErr bool
+	}{
+		{name: "valid map", input: map[string]any{"key": "val"}, wantErr: false},
+		{name: "empty map", input: map[string]any{}, wantErr: false},
+		{name: "string", input: "not a map", wantErr: true},
+		{name: "int", input: 42, wantErr: true},
+		{name: "nil", input: nil, wantErr: true},
+		{name: "slice", input: []string{"a"}, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := toMap(tt.input)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Nil(t, got)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, got)
 			}
 		})
 	}
