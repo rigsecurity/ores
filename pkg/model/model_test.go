@@ -16,7 +16,7 @@ func TestNewModel(t *testing.T) {
 
 func TestModelVersion(t *testing.T) {
 	m := model.New()
-	assert.Equal(t, "0.2.0", m.Version())
+	assert.Equal(t, model.ModelVersion, m.Version())
 }
 
 func TestModelDeterminism(t *testing.T) {
@@ -209,4 +209,20 @@ func TestModelRawScoreInRange(t *testing.T) {
 		assert.GreaterOrEqual(t, f.RawScore, 0.0, "raw score must be >= 0 for factor %s", f.Name)
 		assert.LessOrEqual(t, f.RawScore, 1.0, "raw score must be <= 1 for factor %s", f.Name)
 	}
+}
+
+// TestModelScoreWeightedEmptyNonNilSlice ensures empty non-nil slice behaves same as nil.
+func TestModelScoreWeightedEmptyNonNilSlice(t *testing.T) {
+	m := model.New()
+
+	nilResult, err := m.ScoreWeighted(nil)
+	require.NoError(t, err)
+
+	emptyResult, err := m.ScoreWeighted([]signals.NormalizedSignal{})
+	require.NoError(t, err)
+
+	assert.Equal(t, nilResult.Score, emptyResult.Score,
+		"nil and empty slice should produce same score")
+	assert.Equal(t, nilResult.Factors, emptyResult.Factors,
+		"nil and empty slice should produce same factors")
 }

@@ -71,11 +71,13 @@ func (c *Compliance) Validate(raw any) error {
 // Normalize converts raw Compliance input to normalized factor values.
 // compliance_scope = min(len(frameworks) / 5.0, 1.0).
 func (c *Compliance) Normalize(raw any) (signals.NormalizedSignal, error) {
+	m, err := toMap(raw)
+	if err != nil {
+		return nil, err
+	}
 	if err := c.Validate(raw); err != nil {
 		return nil, err
 	}
-
-	m := raw.(map[string]any)
 	ns := make(signals.NormalizedSignal)
 
 	if fwVal, ok := m["frameworks_affected"]; ok {

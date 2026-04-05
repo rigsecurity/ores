@@ -84,7 +84,8 @@ The WASM module is a pure function over standard I/O:
       "kind": "EvaluationResult",
       "score": 79,
       "label": "high",
-      "version": "0.1.0-preview",
+      "mode": "weighted",
+      "version": "0.2.0",
       "explanation": {
         "signals_provided": 3,
         "signals_used": 3,

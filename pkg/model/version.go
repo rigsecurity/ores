@@ -3,4 +3,6 @@
 // Both modes are deterministic: identical inputs always produce identical outputs.
 package model
 
-const modelVersion = "0.2.0"
+// ModelVersion is the current version of the ORES scoring model.
+// Tests should reference this constant rather than hardcoding the version string.
+const ModelVersion = "0.2.0"

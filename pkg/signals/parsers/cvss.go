@@ -53,11 +53,13 @@ func (c *CVSS) Validate(raw any) error {
 // Normalize converts raw CVSS input to normalized factor values.
 // Produces severity = base_score / 10.0 when base_score is present.
 func (c *CVSS) Normalize(raw any) (signals.NormalizedSignal, error) {
+	m, err := toMap(raw)
+	if err != nil {
+		return nil, err
+	}
 	if err := c.Validate(raw); err != nil {
 		return nil, err
 	}
-
-	m := raw.(map[string]any)
 	ns := make(signals.NormalizedSignal)
 
 	if scoreVal, ok := m["base_score"]; ok {

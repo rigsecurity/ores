@@ -79,7 +79,8 @@ Both JSON and YAML are accepted. The input must be a valid `EvaluationRequest` e
       "kind": "EvaluationResult",
       "score": 87,
       "label": "high",
-      "version": "0.1.0-preview",
+      "mode": "weighted",
+      "version": "0.2.0",
       "explanation": {
         "signals_provided": 4,
         "signals_used": 4,
@@ -89,31 +90,31 @@ Both JSON and YAML are accepted. The input must be a valid `EvaluationRequest` e
         "confidence": 0.60,
         "factors": [
           {
-            "factor": "base_vulnerability",
+            "name": "base_vulnerability",
             "contribution": 26,
             "derived_from": ["cvss"],
             "reasoning": "Base severity score from vulnerability data (high impact: 88%)"
           },
           {
-            "factor": "exploitability",
+            "name": "exploitability",
             "contribution": 22,
             "derived_from": ["epss", "threat_intel"],
             "reasoning": "Likelihood of exploitation based on threat landscape (high impact: 93%)"
           },
           {
-            "factor": "environmental_context",
+            "name": "environmental_context",
             "contribution": 17,
             "derived_from": ["asset"],
             "reasoning": "Environmental risk based on asset criticality and exposure (high impact: 74%)"
           },
           {
-            "factor": "remediation_gap",
+            "name": "remediation_gap",
             "contribution": 13,
             "derived_from": ["defaults"],
             "reasoning": "Remediation posture based on patch availability and compliance (moderate impact: 50%)"
           },
           {
-            "factor": "lateral_risk",
+            "name": "lateral_risk",
             "contribution": 9,
             "derived_from": ["defaults"],
             "reasoning": "Lateral movement potential based on blast radius (moderate impact: 30%)"
@@ -136,7 +137,8 @@ Both JSON and YAML are accepted. The input must be a valid `EvaluationRequest` e
     kind: EvaluationResult
     score: 87
     label: high
-    version: 0.1.0-preview
+    mode: weighted
+    version: 0.2.0
     explanation:
       signals_provided: 4
       signals_used: 4
@@ -145,23 +147,23 @@ Both JSON and YAML are accepted. The input must be a valid `EvaluationRequest` e
       warnings: []
       confidence: 0.60
       factors:
-        - factor: base_vulnerability
+        - name: base_vulnerability
           contribution: 26
           derived_from: [cvss]
           reasoning: "Base severity score from vulnerability data (high impact: 88%)"
-        - factor: exploitability
+        - name: exploitability
           contribution: 22
           derived_from: [epss, threat_intel]
           reasoning: "Likelihood of exploitation based on threat landscape (high impact: 93%)"
-        - factor: environmental_context
+        - name: environmental_context
           contribution: 17
           derived_from: [asset]
           reasoning: "Environmental risk based on asset criticality and exposure (high impact: 74%)"
-        - factor: remediation_gap
+        - name: remediation_gap
           contribution: 13
           derived_from: [defaults]
           reasoning: "Remediation posture based on patch availability and compliance (moderate impact: 50%)"
-        - factor: lateral_risk
+        - name: lateral_risk
           contribution: 9
           derived_from: [defaults]
           reasoning: "Lateral movement potential based on blast radius (moderate impact: 30%)"
@@ -178,7 +180,8 @@ Both JSON and YAML are accepted. The input must be a valid `EvaluationRequest` e
     ```
     Score:          87
     Label:          high
-    Version:        0.1.0-preview
+    Mode:           weighted
+    Version:        0.2.0
     Confidence:     0.60
     Signals used:   4 / 4
 
@@ -227,15 +230,47 @@ threat_intel  Threat intelligence: active exploitation and ransomware associatio
 
 ### `ores version`
 
-Print the CLI version and model version.
+Print the ORES scoring model version.
 
 ```
-ores version
+ores version [flags]
 ```
 
-```
-ores version 0.1.0-preview (model: 0.1.0-preview)
-```
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--output` | `-o` | `text` | Output format: `text`, `json`, or `yaml`. |
+
+=== "Text (default)"
+
+    ```bash
+    ores version
+    ```
+
+    ```
+    ores model version 0.2.0
+    ```
+
+=== "JSON"
+
+    ```bash
+    ores version -o json
+    ```
+
+    ```json
+    {
+      "version": "0.2.0"
+    }
+    ```
+
+=== "YAML"
+
+    ```bash
+    ores version -o yaml
+    ```
+
+    ```yaml
+    version: 0.2.0
+    ```
 
 ---
 

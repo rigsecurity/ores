@@ -92,11 +92,13 @@ func (a *Asset) Validate(raw any) error {
 
 // Normalize converts raw Asset input to normalized factor values.
 func (a *Asset) Normalize(raw any) (signals.NormalizedSignal, error) {
+	m, err := toMap(raw)
+	if err != nil {
+		return nil, err
+	}
 	if err := a.Validate(raw); err != nil {
 		return nil, err
 	}
-
-	m := raw.(map[string]any)
 	ns := make(signals.NormalizedSignal)
 
 	if critVal, ok := m["criticality"]; ok {

@@ -274,3 +274,97 @@ func TestB4FactorWeightsAreZero(t *testing.T) {
 		assert.InDelta(t, 0.0, f.Weight, 0.0001, "weight must be 0 for B4 factor %s", f.Name)
 	}
 }
+
+// TestB4ZeroFinding: [0] → base = -0.5, neutral adjusts = 0, raw = -0.5 → clamp to 0 → score=0.
+func TestB4ZeroFinding(t *testing.T) {
+	m := model.New()
+	result, err := m.ScoreB4([]float64{0}, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 0, result.Score, "a finding of 0 should produce score 0")
+}
+
+// TestB4FindingsSliceNotMutated verifies that ScoreB4 does not modify the caller's slice.
+func TestB4FindingsSliceNotMutated(t *testing.T) {
+	m := model.New()
+	findings := []float64{3, 9, 5, 7}
+	original := make([]float64, len(findings))
+	copy(original, findings)
+
+	_, err := m.ScoreB4(findings, nil)
+	require.NoError(t, err)
+	assert.Equal(t, original, findings, "ScoreB4 must not mutate the caller's findings slice")
+}
+
+// TestB4ExactRegressionPins pins exact score outputs for specific inputs to catch
+// regressions from formula changes. These values are derived from the current algorithm.
+func TestB4ExactRegressionPins(t *testing.T) {
+	m := model.New()
+
+	tests := []struct {
+		name      string
+		findings  []float64
+		factors   map[string]float64
+		wantScore int
+	}{
+		{"single_max", []float64{10}, nil, 95},
+		{"single_low", []float64{2}, nil, 15},
+		{"single_zero", []float64{0}, nil, 0},
+		{"two_max", []float64{10, 9}, nil, 100},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := m.ScoreB4(tt.findings, tt.factors)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantScore, result.Score, "exact score pin for %s", tt.name)
+		})
+	}
+}
+
+// TestB4AxisIsolation verifies each axis independently by holding the other two neutral.
+func TestB4AxisIsolation(t *testing.T) {
+	m := model.New()
+	base, err := m.ScoreB4([]float64{5}, nil)
+	require.NoError(t, err)
+
+	t.Run("environmental only", func(t *testing.T) {
+		high, err := m.ScoreB4([]float64{5}, map[string]float64{
+			"asset_criticality": 1.0, "network_exposure": 1.0, "data_sensitivity": 1.0,
+		})
+		require.NoError(t, err)
+		low, err := m.ScoreB4([]float64{5}, map[string]float64{
+			"asset_criticality": 0.0, "network_exposure": 0.0, "data_sensitivity": 0.0,
+		})
+		require.NoError(t, err)
+		assert.Greater(t, high.Score, base.Score, "high env > neutral")
+		assert.Less(t, low.Score, base.Score, "low env < neutral")
+	})
+
+	t.Run("blast_radius only", func(t *testing.T) {
+		high, err := m.ScoreB4([]float64{5}, map[string]float64{
+			"blast_scope": 1.0, "lateral_movement": 1.0,
+		})
+		require.NoError(t, err)
+		low, err := m.ScoreB4([]float64{5}, map[string]float64{
+			"blast_scope": 0.0, "lateral_movement": 0.0,
+		})
+		require.NoError(t, err)
+		assert.Greater(t, high.Score, base.Score, "high blast > neutral")
+		assert.Less(t, low.Score, base.Score, "low blast < neutral")
+	})
+
+	t.Run("remediation only", func(t *testing.T) {
+		high, err := m.ScoreB4([]float64{5}, map[string]float64{
+			"remediation_available": 1.0, "patch_staleness": 1.0,
+			"regulatory_severity": 1.0, "compliance_scope": 1.0,
+		})
+		require.NoError(t, err)
+		low, err := m.ScoreB4([]float64{5}, map[string]float64{
+			"remediation_available": 0.0, "patch_staleness": 0.0,
+			"regulatory_severity": 0.0, "compliance_scope": 0.0,
+		})
+		require.NoError(t, err)
+		assert.Greater(t, high.Score, base.Score, "high remediation > neutral")
+		assert.Less(t, low.Score, base.Score, "low remediation < neutral")
+	})
+}

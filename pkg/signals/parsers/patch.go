@@ -72,11 +72,13 @@ func (p *Patch) Validate(raw any) error {
 // Normalize converts raw Patch input to normalized factor values.
 // patch_staleness is only emitted when patch_available is true.
 func (p *Patch) Normalize(raw any) (signals.NormalizedSignal, error) {
+	m, err := toMap(raw)
+	if err != nil {
+		return nil, err
+	}
 	if err := p.Validate(raw); err != nil {
 		return nil, err
 	}
-
-	m := raw.(map[string]any)
 	ns := make(signals.NormalizedSignal)
 
 	patchAvailable := false

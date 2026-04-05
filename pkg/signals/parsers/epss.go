@@ -64,11 +64,13 @@ func (e *EPSS) Validate(raw any) error {
 // Normalize converts raw EPSS input to normalized factor values.
 // Produces exploit_probability and/or exploit_percentile as-is (already 0-1).
 func (e *EPSS) Normalize(raw any) (signals.NormalizedSignal, error) {
+	m, err := toMap(raw)
+	if err != nil {
+		return nil, err
+	}
 	if err := e.Validate(raw); err != nil {
 		return nil, err
 	}
-
-	m := raw.(map[string]any)
 	ns := make(signals.NormalizedSignal)
 
 	if probVal, ok := m["probability"]; ok {

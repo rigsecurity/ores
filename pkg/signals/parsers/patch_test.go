@@ -216,3 +216,12 @@ func TestPatchFields(t *testing.T) {
 	assert.Contains(t, fields, "patch_age_days")
 	assert.Contains(t, fields, "compensating_control")
 }
+
+func TestPatchAvailableWithoutAgeDays(t *testing.T) {
+	p := &parsers.Patch{}
+	ns, err := p.Normalize(map[string]any{"patch_available": true})
+	require.NoError(t, err)
+	assert.InDelta(t, 1.0, ns["remediation_available"], 0.001)
+	_, hasStaleness := ns["patch_staleness"]
+	assert.False(t, hasStaleness, "patch_staleness should not be emitted when patch_age_days is absent")
+}

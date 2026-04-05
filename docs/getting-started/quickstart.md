@@ -100,7 +100,8 @@ Create a file with the vulnerability signals you want to evaluate. ORES accepts 
 ```
 Score:          87
 Label:          high
-Version:        0.1.0-preview
+Mode:           weighted
+Version:        0.2.0
 Confidence:     0.75
 Signals used:   5 / 5
 
@@ -156,7 +157,8 @@ ores evaluate -f signals.yaml -o json
       "kind": "EvaluationResult",
       "score": 87,
       "label": "high",
-      "version": "0.1.0-preview",
+      "mode": "weighted",
+      "version": "0.2.0",
       "explanation": {
         "signals_provided": 5,
         "signals_used": 5,
@@ -166,31 +168,31 @@ ores evaluate -f signals.yaml -o json
         "confidence": 0.75,
         "factors": [
           {
-            "factor": "base_vulnerability",
+            "name": "base_vulnerability",
             "contribution": 26,
             "derived_from": ["cvss"],
             "reasoning": "Base severity score from vulnerability data (high impact: 88%)"
           },
           {
-            "factor": "exploitability",
+            "name": "exploitability",
             "contribution": 22,
             "derived_from": ["epss", "threat_intel"],
             "reasoning": "Likelihood of exploitation based on threat landscape (high impact: 93%)"
           },
           {
-            "factor": "environmental_context",
+            "name": "environmental_context",
             "contribution": 17,
             "derived_from": ["asset"],
             "reasoning": "Environmental risk based on asset criticality and exposure (high impact: 74%)"
           },
           {
-            "factor": "remediation_gap",
+            "name": "remediation_gap",
             "contribution": 13,
             "derived_from": ["patch"],
             "reasoning": "Remediation posture based on patch availability and compliance (moderate impact: 58%)"
           },
           {
-            "factor": "lateral_risk",
+            "name": "lateral_risk",
             "contribution": 9,
             "derived_from": ["defaults"],
             "reasoning": "Lateral movement potential based on blast radius (moderate impact: 30%)"

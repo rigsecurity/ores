@@ -40,6 +40,23 @@ tasks:
     cmds:
       - buf generate
 
+  bench:
+    desc: Run benchmarks
+    cmds:
+      - go test -bench=. -benchmem -run=^$ ./...
+
+  fuzz:
+    desc: Run fuzz tests (30s per target)
+    cmds:
+      - go test -fuzz=Fuzz -fuzztime=30s ./pkg/engine/
+      - go test -fuzz=Fuzz -fuzztime=30s ./pkg/signals/parsers/
+
+  test:cover:
+    desc: Generate and open HTML coverage report
+    cmds:
+      - go test -coverprofile=coverage.txt ./...
+      - go tool cover -html=coverage.txt
+
   clean:
     desc: Remove build artifacts
     cmds:

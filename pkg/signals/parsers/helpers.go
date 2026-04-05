@@ -3,6 +3,21 @@
 // named float64 factors in the [0.0, 1.0] range.
 package parsers
 
+import "errors"
+
+// errNotAMap is returned when Normalize is called with a non-map value.
+var errNotAMap = errors.New("input must be a map")
+
+// toMap performs a guarded type assertion to map[string]any.
+// This is used by Normalize methods to avoid a panic if called without Validate.
+func toMap(v any) (map[string]any, error) {
+	m, ok := v.(map[string]any)
+	if !ok {
+		return nil, errNotAMap
+	}
+	return m, nil
+}
+
 func toFloat64(v any) (float64, bool) {
 	switch n := v.(type) {
 	case float64:
@@ -10,6 +25,8 @@ func toFloat64(v any) (float64, bool) {
 	case float32:
 		return float64(n), true
 	case int:
+		return float64(n), true
+	case int32:
 		return float64(n), true
 	case int64:
 		return float64(n), true

@@ -55,15 +55,15 @@ The `ores` CLI evaluates risk signals from the terminal, scripts, and CI pipelin
     === "Debian / Ubuntu"
 
         ```bash
-        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/ores_0.1.0-beta.1_linux_amd64.deb
-        sudo dpkg -i ores_0.1.0-beta.1_linux_amd64.deb
+        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/ores_0.2.0_linux_amd64.deb
+        sudo dpkg -i ores_0.2.0_linux_amd64.deb
         ```
 
     === "Fedora / RHEL"
 
         ```bash
-        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/ores_0.1.0-beta.1_linux_amd64.rpm
-        sudo rpm -i ores_0.1.0-beta.1_linux_amd64.rpm
+        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/ores_0.2.0_linux_amd64.rpm
+        sudo rpm -i ores_0.2.0_linux_amd64.rpm
         ```
 
     **Verify:**
@@ -165,7 +165,7 @@ The `oresd` daemon exposes a long-running **ConnectRPC / HTTP** service. Use it 
 
     !!! tip "Pin to a specific release for production"
         ```bash
-        docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:0.1.0-preview
+        docker run -p 8080:8080 ghcr.io/rigsecurity/oresd:0.2.0
         ```
 
     **Verify:**
@@ -196,16 +196,16 @@ The `oresd` daemon exposes a long-running **ConnectRPC / HTTP** service. Use it 
     === "Debian / Ubuntu"
 
         ```bash
-        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/oresd_0.1.0-beta.1_linux_amd64.deb
-        sudo dpkg -i oresd_0.1.0-beta.1_linux_amd64.deb
+        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/oresd_0.2.0_linux_amd64.deb
+        sudo dpkg -i oresd_0.2.0_linux_amd64.deb
         sudo systemctl enable --now oresd
         ```
 
     === "Fedora / RHEL"
 
         ```bash
-        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/oresd_0.1.0-beta.1_linux_amd64.rpm
-        sudo rpm -i oresd_0.1.0-beta.1_linux_amd64.rpm
+        curl -LO https://github.com/rigsecurity/ores/releases/latest/download/oresd_0.2.0_linux_amd64.rpm
+        sudo rpm -i oresd_0.2.0_linux_amd64.rpm
         sudo systemctl enable --now oresd
         ```
 

@@ -57,11 +57,13 @@ func (n *NIST) Validate(raw any) error {
 // Normalize converts raw NIST input to normalized factor values.
 // Produces nist_severity mapped from the severity enum.
 func (n *NIST) Normalize(raw any) (signals.NormalizedSignal, error) {
+	m, err := toMap(raw)
+	if err != nil {
+		return nil, err
+	}
 	if err := n.Validate(raw); err != nil {
 		return nil, err
 	}
-
-	m := raw.(map[string]any)
 	ns := make(signals.NormalizedSignal)
 
 	sev, _ := toString(m["severity"])

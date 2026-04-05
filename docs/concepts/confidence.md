@@ -148,7 +148,8 @@ Confidence is returned in the `explanation` field of every `EvaluationResult`:
   "kind": "EvaluationResult",
   "score": 62,
   "label": "medium",
-  "version": "0.1.0-preview",
+  "mode": "weighted",
+  "version": "0.2.0",
   "explanation": {
     "signals_provided": 2,
     "signals_used": 2,

@@ -65,11 +65,13 @@ func (b *BlastRadius) Validate(raw any) error {
 // Normalize converts raw BlastRadius input to normalized factor values.
 // blast_scope uses a log10 scale capped at 1.0 (1000 systems = 1.0).
 func (b *BlastRadius) Normalize(raw any) (signals.NormalizedSignal, error) {
+	m, err := toMap(raw)
+	if err != nil {
+		return nil, err
+	}
 	if err := b.Validate(raw); err != nil {
 		return nil, err
 	}
-
-	m := raw.(map[string]any)
 	ns := make(signals.NormalizedSignal)
 
 	if sysVal, ok := m["affected_systems"]; ok {
