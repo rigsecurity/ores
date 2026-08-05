@@ -21,16 +21,18 @@ jobs:
     # Only run on tags pushed to the default branch
     if: github.repository == 'rigsecurity/ores'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-      - uses: bufbuild/buf-setup-action@v1
+      - uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
       - run: buf generate
       - uses: sigstore/cosign-installer@v3
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
           args: release --clean
