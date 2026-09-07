@@ -16,7 +16,7 @@
   <a href="https://goreportcard.com/report/github.com/rigsecurity/ores"><img src="https://goreportcard.com/badge/github.com/rigsecurity/ores" alt="Go Report Card"></a>
   <a href="https://pkg.go.dev/github.com/rigsecurity/ores"><img src="https://pkg.go.dev/badge/github.com/rigsecurity/ores.svg" alt="Go Reference"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
-  <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/go-%3E%3D1.25-00ADD8.svg" alt="Go Version"></a>
+  <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/go-%3E%3D1.27.1-00ADD8.svg" alt="Go Version"></a>
 </p>
 
 ---

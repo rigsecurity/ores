@@ -32,7 +32,7 @@ The `oresd` daemon exposes the ORES engine as a long-running HTTP service using 
     go install github.com/rigsecurity/ores/cmd/oresd@latest
     ```
 
-    Requires Go 1.25 or later.
+    Requires Go 1.27.1 or later.
 
 The daemon starts on port `8080` by default and logs to stdout in JSON format:
 
