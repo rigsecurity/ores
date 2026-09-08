@@ -1,9 +1,10 @@
 {
   "name": "ORES Development",
-  "image": "mcr.microsoft.com/devcontainers/go:1.25",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "features": {
     "ghcr.io/devcontainers/features/go:1": {
-      "version": "1.25"
+      "version": "1.27.1",
+      "golangciLintVersion": "2.13.2"
     }
   },
   "postCreateCommand": "go mod download && go install github.com/go-task/task/v3/cmd/task@latest && go install github.com/bufbuild/buf/cmd/buf@latest",

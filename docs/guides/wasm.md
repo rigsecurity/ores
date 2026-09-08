@@ -16,7 +16,7 @@ curl -Lo ores.wasm \
 ```
 
 ??? note "Building from source"
-    Requires Go 1.25 and the [Task](https://taskfile.dev/) task runner.
+    Requires Go 1.27.1 and the [Task](https://taskfile.dev/) task runner.
 
     ```bash
     git clone https://github.com/rigsecurity/ores.git

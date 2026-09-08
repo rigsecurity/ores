@@ -11,7 +11,7 @@ go get github.com/rigsecurity/ores
 ```
 
 !!! note "Go version"
-    Requires **Go 1.25** or later.
+    Requires **Go 1.27.1** or later.
 
 ---
 

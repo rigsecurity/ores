@@ -74,7 +74,7 @@ The `ores` CLI evaluates risk signals from the terminal, scripts, and CI pipelin
 
 === ":material-language-go: Go Install"
 
-    If you have **Go 1.25+** on your machine:
+    If you have **Go 1.27.1+** on your machine:
 
     ```bash
     go install github.com/rigsecurity/ores/cmd/ores@latest
@@ -142,7 +142,7 @@ The `ores` CLI evaluates risk signals from the terminal, scripts, and CI pipelin
     Binaries land in the `bin/` directory.
 
     !!! note "Build prerequisites"
-        Building from source requires **Go 1.25+** and [Task](https://taskfile.dev){ target=_blank }. See [Contributing: Development](../contributing/development.md) for the full setup guide.
+        Building from source requires **Go 1.27.1+** and [Task](https://taskfile.dev){ target=_blank }. See [Contributing: Development](../contributing/development.md) for the full setup guide.
 
     **Verify:**
 

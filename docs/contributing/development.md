@@ -8,10 +8,10 @@ Welcome to the ORES contributor experience. This guide covers everything you nee
 
 | Tool | Version | Purpose |
 |:-----|:--------|:--------|
-| [Go](https://go.dev/dl/) | 1.25+ | All Go code |
+| [Go](https://go.dev/dl/) | 1.27.1+ | All Go code |
 | [Task](https://taskfile.dev/#/installation) | 3.x | Task runner (replaces `make`) |
 | [buf](https://buf.build/docs/installation) | 1.x | Protobuf code generation |
-| [golangci-lint](https://golangci-lint.run/welcome/install/) | latest | Linting (bundled via `go tool`) |
+| [golangci-lint](https://golangci-lint.run/welcome/install/) | Pinned in `go.mod` | Linting (bundled via `go tool`) |
 
 !!! tip "golangci-lint is bundled"
     golangci-lint is configured as a `go tool` in `go.mod` — you do **not** need to install it separately.
@@ -245,7 +245,7 @@ All code must pass `golangci-lint run ./...` with zero findings.
 
 ## :material-microsoft-visual-studio-code: Devcontainer
 
-A `.devcontainer/devcontainer.json` is included for VS Code and GitHub Codespaces. It sets up Go 1.25, Task, and buf automatically.
+A `.devcontainer/devcontainer.json` is included for VS Code and GitHub Codespaces. It sets up Go 1.27.1, Task, and buf automatically.
 
 !!! tip "One-click setup"
     Open the repository in VS Code and choose **"Reopen in Container"** to get a fully configured environment with all tools pre-installed.
