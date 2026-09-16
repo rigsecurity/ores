@@ -1,0 +1,28 @@
+name: Publish Python package
+
+on:
+  push:
+    tags: ["rig-ores-v*"]
+
+# SECURITY: This repo is public. Publish workflow runs on GitHub-hosted runners only.
+# - id-token:write is needed for PyPI Trusted Publishing (OIDC); no stored API token.
+# No org-level secrets are referenced or accessible.
+
+permissions:
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Only run on tags pushed to the default branch
+    if: github.repository == 'rigsecurity/ores'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build clients/python
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: clients/python/dist
