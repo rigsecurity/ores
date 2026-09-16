@@ -59,6 +59,19 @@ class ScoreResult:
     capped: bool
     factors: list[Factor]
 
+    def explain(self) -> str:
+        score_display = f"{self.score:.2f}"
+        if not self.factors:
+            no_findings_explanation = f"Score: {score_display} (no findings)"
+            return no_findings_explanation
+
+        primary_tier = next(factor.tier for factor in self.factors if factor.feature == "primary")
+        ranked_factors = sorted(self.factors, key=lambda factor: factor.contribution, reverse=True)
+        lines = [f"Score: {score_display} ({primary_tier})"]
+        lines += [f"  +{factor.contribution:.2f}  {factor.reasoning}" for factor in ranked_factors]
+        explanation = "\n".join(lines)
+        return explanation
+
 
 def score_identity(
     id: str,

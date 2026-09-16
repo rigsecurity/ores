@@ -31,6 +31,19 @@ def test_custom_spec_overrides_default_weights() -> None:
     assert result.score == 5.0
 
 
+def test_explain_lists_only_nonzero_contributions_highest_first() -> None:
+    result = score_identity("id-1", critical=1, high=2)
+    lines = result.explain().splitlines()
+    assert lines[0] == "Score: 9.42 (critical)"
+    assert len(lines) == 1 + len(result.factors)
+    assert lines[1].startswith("  +9.00")
+
+
+def test_explain_with_no_findings() -> None:
+    result = score_identity("id-1")
+    assert result.explain() == "Score: 0.00 (no findings)"
+
+
 def test_batch_preserves_id_and_order() -> None:
     results = score_batch(
         [
