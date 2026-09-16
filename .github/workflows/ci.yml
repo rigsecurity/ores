@@ -66,3 +66,16 @@ jobs:
       - run: go build ./cmd/ores
       - run: go build ./cmd/oresd
       - run: GOOS=wasip1 GOARCH=wasm go build -o ores.wasm ./pkg/wasm
+
+  python:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clients/python
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[test]"
+      - run: pytest -q

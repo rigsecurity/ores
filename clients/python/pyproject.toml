@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rig-ores"
+version = "0.1.0"
+description = "Python client for ORES: local V0 severity-count risk scoring"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+    { email = "liad@rig.security" },
+    { email = "hila@rig.security" },
+]
+maintainers = [
+    { email = "liad@rig.security" },
+    { email = "hila@rig.security" },
+]
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rig_ores"]

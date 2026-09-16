@@ -1,0 +1,13 @@
+{
+  "tiers": ["critical", "high", "medium", "low"],
+  "feature_rows": ["primary", "same_secondary", "lower_secondary", "same_tier_rest", "cross_tier_rest"],
+  "weights": [
+    [9, 7, 4, 2],
+    [0.7, 1.05, 1.75, 0.96],
+    [0, 0.35, 0.25, 0.15],
+    [0.39, 0.59, 0.99, 0.54],
+    [0.18, 0.15, 0.12, 0.08]
+  ],
+  "ceilings": [10.0, 8.5, 6.5, 3.5],
+  "decay_rate": 0.5
+}
