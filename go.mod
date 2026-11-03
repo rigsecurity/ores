@@ -1,6 +1,6 @@
 module github.com/rigsecurity/ores
 
-go 1.27.1
+go 1.27.3
 
 require (
 	connectrpc.com/connect v1.19.1
